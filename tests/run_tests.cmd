@@ -2,6 +2,7 @@
 rem PC regression for the K922 sentence parser + protocol sample frames.
 rem Needs gcc (e.g. MinGW) in PATH; the Keil/ARM toolchain is not used here.
 setlocal
+chcp 65001 >nul
 cd /d "%~dp0"
 
 set CC=gcc
