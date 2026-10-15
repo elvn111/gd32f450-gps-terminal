@@ -27,10 +27,21 @@
 extern uint8_t usart0_rx_buf[USART0_RX_BUF_SIZE];
 extern uint8_t usart5_rx_buf[USART5_RX_BUF_SIZE];
 /* 交给任务的拷贝：此时 DMA 可能已经开始重新写入同一缓冲 */
-extern uint8_t usart0_frame_buf[USART0_RX_BUF_SIZE];
 extern uint8_t usart5_frame_buf[USART5_RX_BUF_SIZE];
 /* 在 IDLE 中断里快照下来的帧长 */
 extern volatile uint16_t usart0_rx_len;
 extern volatile uint16_t usart5_rx_len;
+
+/* ---- USART0 接收软件环形缓冲 ----
+  * IDLE 中断把刚收到的一段搬进这里，任务再取走处理。
+  * 任务在跑长命令(例如 save 的 Flash 擦写)期间到达的字节因此不会丢失。
+  * 单生产者(中断)单消费者(任务)，用下标做无锁环形，容量必须是 2 的幂。 */
+#define USART0_RING_SIZE             (2048U)
+
+/* 实现在 main.c */
+void     usart0_rx_ring_push(const uint8_t *buf, uint16_t len);
+uint16_t usart0_rx_ring_pop(uint8_t *dst, uint16_t max);
+uint16_t usart0_rx_ring_used(void);
+uint16_t usart0_rx_ring_overflow(void);
 
 #endif /* __BUFF_CONFIG_H__ */

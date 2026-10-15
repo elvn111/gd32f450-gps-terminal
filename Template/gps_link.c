@@ -278,6 +278,71 @@ int gps_link_send_now(void)
     return -1;
 }
 
+void gps_link_stats_get(gps_link_stats_t *out)
+{
+    if (NULL == out) {
+        return;
+    }
+    out->tx_frames   = s_tx_frames;
+    out->tx_bytes    = s_tx_bytes;
+    out->tx_err      = s_tx_err;
+    out->drop_latest = s_drop_latest;
+    out->seq         = s_seq;
+}
+
+/* 终端信息帧：定长 40 字节，TYPE=0x02 */
+int gps_link_send_info(const gps_link_info_t *info)
+{
+    uint8_t  frame[LINK_FRAME_MAX];
+    uint16_t len = (uint16_t)(LINK_TYPE_INFO + 2U + LINK_PAYLOAD_INFO);
+    uint16_t crc;
+    uint16_t i = 6U;
+    uint32_t v;
+
+    if (NULL == info) {
+        return -1;
+    }
+
+    frame[0] = LINK_SOF0;
+    frame[1] = LINK_SOF1;
+    frame[2] = (uint8_t)len;
+    frame[3] = LINK_TYPE_INFO;
+    frame[4] = (uint8_t)(s_seq & 0xFFU);
+    frame[5] = (uint8_t)(s_seq >> 8U);
+
+    v = info->uptime_ms;  frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
+    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
+    v = info->version;    frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
+    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
+    v = info->tx_frames;  frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
+    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
+    v = info->tx_err;     frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
+    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
+    v = info->drop_latest;frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
+    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
+    v = info->gps_ok;     frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
+    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
+    v = info->gps_err;    frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
+    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
+
+    frame[i++] = info->out;
+    frame[i++] = info->auto_mode;
+    frame[i++] = info->rate;
+    frame[i++] = info->sat_min;
+
+    crc = link_crc16(&frame[3], len);                /* TYPE..PAYLOAD 参与 CRC 计算 */
+    frame[i++] = (uint8_t)(crc & 0xFFU);
+    frame[i++] = (uint8_t)(crc >> 8U);
+
+    if (0 != link_tx(frame, i)) {
+        return -1;
+    }
+    s_have_last    = 1U;
+    s_last_tx_tick = xTaskGetTickCount();
+    s_seq++;
+    return 0;
+}
+
 /* 初始化与信息 */
 void gps_link_init(void)
 {

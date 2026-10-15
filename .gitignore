@@ -17,7 +17,6 @@
 /Template/GD32EBuilder_project/**/Output/
 /Template/IAR_project/**/Debug/
 /Template/IAR_project/**/Release/
-*.uvguix.*
 *.build_log.htm
 JLinkLog.txt
 
@@ -30,3 +29,8 @@ JLinkLog.txt
 *.bak_*
 *.orig
 *.rej
+
+# ---- 测试编译产物 ----
+/tests/*.exe
+/tests/test_info_bsp_test
+/tests/*.o

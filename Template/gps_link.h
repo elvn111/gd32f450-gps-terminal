@@ -3,7 +3,7 @@
   * 语义是“保最新”：只留一份最新数据，发不出去就覆盖并计数，不排队、不重传、
   * 不流控，所以延迟不会累积。
   * 与控制台共用 USART0，因此每帧以一次原子 DMA 发出(详见 gps_link.c)。
-  * 帧格式见 GPS_LINK_PROTOCOL.md；本文件只写 ASCII 字符串。 */
+  * 帧格式见 GD32F450_串行接口协议规范.md 第 3 章；本文件只写 ASCII 字符串。 */
 #ifndef GPS_LINK_H
 #define GPS_LINK_H
 
@@ -68,5 +68,42 @@ int gps_link_send_now(void);
 
 /* gstat 命令用的状态报告 */
 void gps_link_info(void);
+
+/* ---- TYPE = 0x02：终端信息帧 ----
+  * 给对端做上电自检与排障：固件版本、上电时长、计数器与当前下行配置。
+  * 载荷 32 字节、定长，帧总长 40 字节(等于 LINK_FRAME_MAX)。全部小端。 */
+#define LINK_TYPE_INFO      (0x02U)
+#define LINK_PAYLOAD_INFO   (32U)
+
+typedef struct
+{
+    uint32_t uptime_ms;      /* 终端上电毫秒数 */
+    uint32_t version;        /* 固件版本 major<<16 | minor<<8 | patch */
+    uint32_t tx_frames;      /* 已成功发出的下行帧数 */
+    uint32_t tx_err;         /* 发送失败次数 */
+    uint32_t drop_latest;    /* 被“保最新”覆盖丢弃的值 */
+    uint32_t gps_ok;         /* 解析成功的语句数 */
+    uint32_t gps_err;        /* 被丢弃的语句数 */
+    uint8_t  out;            /* 当前下行内容 0=off 1=raw 2=parsed */
+    uint8_t  auto_mode;      /* 当前触发方式 0=off 1=fix 2=tick */
+    uint8_t  rate;           /* 当前速率(Hz) */
+    uint8_t  sat_min;        /* 定位有效所需最少星数 */
+} gps_link_info_t;
+
+/* 下行链路统计快照 */
+typedef struct
+{
+    uint32_t tx_frames;
+    uint32_t tx_bytes;
+    uint32_t tx_err;
+    uint32_t drop_latest;
+    uint16_t seq;
+} gps_link_stats_t;
+
+/* 读取统计快照 */
+void gps_link_stats_get(gps_link_stats_t *out);
+
+/* 立刻发一帧终端信息(与 out/auto/rate 无关)，0 = 已发出 */
+int  gps_link_send_info(const gps_link_info_t *info);
 
 #endif /* GPS_LINK_H */

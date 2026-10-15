@@ -51,6 +51,8 @@ typedef struct
     void     (*out_unlock)(void);
     void     (*system_reset)(void);
     uint32_t (*uptime_ms)(void);
+    void     (*gps_hw_reset)(void);                /* 拉 PB4 硬复位 GPS 模块(gps hwreset) */
+    void     (*link_info_send)(void);              /* 下发一帧终端信息(TYPE=0x02，info 命令) */
 } cli_platform_t;
 
 /* 接口 */
@@ -73,5 +75,18 @@ void cli_stat_gps(int ok);
   * 避免别的任务把一行/一组数据从中截断；CLI 内部自己也会加锁。 */
 void cli_out_lock(void);
 void cli_out_unlock(void);
+
+/* 统计快照：status 打印与终端信息帧共用同一份口径 */
+typedef struct
+{
+    uint32_t rx_frames;      /* 控制台收到的数据段数 */
+    uint32_t rx_bytes;       /* 控制台收到的字节数 */
+    uint32_t cmds;           /* 执行过的命令数 */
+    uint32_t unknown;        /* 未知命令数 */
+    uint32_t gps_ok;         /* 解析成功的语句数 */
+    uint32_t gps_err;        /* 被丢弃的语句数 */
+} cli_stats_t;
+
+void cli_stats_get(cli_stats_t *out);
 
 #endif /* CLI_H */

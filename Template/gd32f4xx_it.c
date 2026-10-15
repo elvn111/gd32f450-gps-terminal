@@ -256,6 +256,10 @@ void USART0_IRQHandler(void)
         len = (uint16_t)(USART0_RX_BUF_SIZE - (uint16_t)dma_transfer_number_get(USART0_RX_DMA, USART0_RX_DMA_CH));
         usart0_rx_len = len;
 
+        /* 先搬进软件环形缓冲，再重新装载 DMA：任务哪怕正在跑长命令，
+          * 这一段也不会被下一段覆盖。 */
+        usart0_rx_ring_push(usart0_rx_buf, len);
+
         if(NULL != RX_Semaph){
             BaseType_t woken = pdFALSE;
             xSemaphoreGiveFromISR(RX_Semaph, &woken);

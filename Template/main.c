@@ -63,10 +63,106 @@ uint8_t usart5_rx_buf[USART5_RX_BUF_SIZE]={0};
 uint8_t usart5_frame_buf[USART5_RX_BUF_SIZE]={0};
 volatile uint16_t usart5_rx_len = 0;
 
+/* 按行组装：一块数据里可能含多条语句，也可能在某条语句中间被切断，
+  * 因此把没凑成整行的尾巴留到下一块，只把完整语句交出去。
+  * 这样后面每个环节拿到的都是“一条完整语句”。 */
+#define GPS_LINE_CARRY_SIZE (2048U)
+#define GPS_LINE_MAX        (256U)
+
+static uint8_t  s_gps_carry[GPS_LINE_CARRY_SIZE];
+static uint16_t s_gps_carry_len = 0U;
+static uint16_t s_gps_carry_drop = 0U;    /* 没有行结束符而被迫丢弃的次数 */
+static char     s_gps_line[GPS_LINE_MAX]; /* 一行语句的解析副本 */
+
+/* 从块里取下一行：返回行首，len 含行尾的 CR/LF；返回 NULL 表示没有更多内容。 */
+static char *gps_line_next(char **pp, uint16_t *len)
+{
+    char *s = *pp;
+    char *end;
+    char *term;
+
+    if(NULL == s){
+        return NULL;
+    }
+    while(('\r' == *s) || ('\n' == *s)){
+        s++;
+    }
+    if('\0' == *s){
+        *pp = NULL;
+        return NULL;
+    }
+    end = s;
+    while(('\0' != *end) && ('\r' != *end) && ('\n' != *end)){
+        end++;
+    }
+    term = end;
+    if('\r' == *term){
+        term++;
+        if('\n' == *term){
+            term++;
+        }
+    }else if('\n' == *term){
+        term++;
+    }
+    *len = (uint16_t)(term - s);
+    *pp  = ('\0' == *term) ? NULL : term;
+    return s;
+}
+
 /* USART0 接收 DMA 的缓冲配置见 buff_config.h */
 uint8_t usart0_rx_buf[USART0_RX_BUF_SIZE] = {0};
-uint8_t usart0_frame_buf[USART0_RX_BUF_SIZE] = {0};
 volatile uint16_t usart0_rx_len = 0;
+
+/* 控制台输入的软件环形缓冲：中断写、RX_Task 读。
+  * 下标按容量取模，读写各占一端，因此不需要加锁。 */
+static volatile uint8_t  s_ring[USART0_RING_SIZE];
+static volatile uint16_t s_ring_head = 0U;
+static volatile uint16_t s_ring_tail = 0U;
+static volatile uint16_t s_ring_ovf  = 0U;
+
+void usart0_rx_ring_push(const uint8_t *buf, uint16_t len)
+{
+    uint16_t used, space, i;
+
+    if((NULL == buf) || (0U == len)){
+        return;
+    }
+    used  = (uint16_t)((s_ring_head - s_ring_tail) & (USART0_RING_SIZE - 1U));
+    space = (uint16_t)(USART0_RING_SIZE - 1U - used);
+    if(len > space){
+        s_ring_ovf = (uint16_t)(s_ring_ovf + (len - space));
+        len = space;
+    }
+    for(i = 0U; i < len; i++){
+        s_ring[s_ring_head] = buf[i];
+        s_ring_head = (uint16_t)((s_ring_head + 1U) & (USART0_RING_SIZE - 1U));
+    }
+}
+
+uint16_t usart0_rx_ring_pop(uint8_t *dst, uint16_t max)
+{
+    uint16_t n = 0U;
+
+    if(NULL == dst){
+        return 0U;
+    }
+    while((n < max) && (s_ring_tail != s_ring_head)){
+        dst[n] = s_ring[s_ring_tail];
+        s_ring_tail = (uint16_t)((s_ring_tail + 1U) & (USART0_RING_SIZE - 1U));
+        n++;
+    }
+    return n;
+}
+
+uint16_t usart0_rx_ring_used(void)
+{
+    return (uint16_t)((s_ring_head - s_ring_tail) & (USART0_RING_SIZE - 1U));
+}
+
+uint16_t usart0_rx_ring_overflow(void)
+{
+    return s_ring_ovf;
+}
 
 /* Binary semaphore handle definition. */
 SemaphoreHandle_t GPSRX_Semaph;
@@ -115,17 +211,6 @@ const char GPS_CMD[STRING_NUM][STRING_LEN]={
 	"log com1 gpnav ontime 1\r\n",
 	"log com1 gpybm ontime 1\r\n",
 };
-//const char GPS_CMD[STRING_NUM][STRING_LEN]={
-//	"LOG COM1 VERSION ONTIME 1\r\n",
-//	"LOG COM1 COMCONFIG ONTIME 1\r\n",
-//	"LOG COM1 LOGLIST ONTIME 1\r\n",
-//	"LOG COM1 BESTPOSA ONTIME 1\r\n",
-//	"LOG COM1 PSRDOPA ONTIME 1\r\n",
-//	"LOG COM1 HEADINGA ONTIME 1\r\n",
-//	"LOG COM1 SYSRTS ONCE1\r\n",
-//	"log com1 gpnav ontime 1\r\n",
-//	"log com1 gpybm ontime 1\r\n",
-//};
 
 void uart_send_string(uint32_t usart, const char *str)
 {
@@ -228,6 +313,20 @@ static void plat_gps_info_print(void)
            (unsigned)cfg->sat_min);
 }
 
+/* 固件版本：major<<16 | minor<<8 | patch，随终端信息帧下发 */
+#define APP_VERSION             0x010200U
+
+/* 硬复位模块：PB4 拉低->释放->等它启动->重发预设命令。
+  * 只能在任务里调用(vTaskDelay)。 */
+static void plat_gps_hw_reset(void)
+{
+    printf("[gps] hardware reset (PB4 low %u ms)\r\n", (unsigned)GPS_RESET_LOW_MS);
+    gps_reset_pulse(GPS_RESET_LOW_MS);
+    vTaskDelay(pdMS_TO_TICKS(GPS_RESET_BOOT_MS));
+    (void)gps_init();
+    printf("[gps] module rebooted, preset commands sent\r\n");
+}
+
 /* 重配 GPS 串口波特率(只动 USART5 参数, 不改 DMA) */
 static void plat_gps_baud_set(uint32_t baud)
 {
@@ -308,6 +407,9 @@ static void plat_dma_info(void)
     plat_dma_channel_info("usart0 rx", USART0_RX_DMA, USART0_RX_DMA_CH);
     plat_dma_channel_info("usart5 rx", USART5_RX_DMA, USART5_RX_DMA_CH);
     printf("[dma] perien: 4 = USART0_RX, 5 = USART5_RX (manual table 10-3)\r\n");
+    printf("[dma] console ring: used=%lu/%lu overflow=%lu last_seg=%lu\r\n",
+           (unsigned long)usart0_rx_ring_used(), (unsigned long)USART0_RING_SIZE,
+           (unsigned long)usart0_rx_ring_overflow(), (unsigned long)usart0_rx_len);
 }
 
 static int plat_config_save(const cli_config_t *cfg)
@@ -337,6 +439,40 @@ static void plat_link_info(void)
     gps_link_info();
 }
 
+/* info 命令：把终端现状打包成一帧 TYPE=0x02 发给对端 */
+static void plat_link_info_send(void)
+{
+    const cli_config_t *cfg = cli_config_get();
+    cli_stats_t        st;
+    gps_link_stats_t   ls;
+    gps_link_info_t    info;
+
+    memset(&st, 0, sizeof(st));
+    memset(&ls, 0, sizeof(ls));
+    memset(&info, 0, sizeof(info));
+    cli_stats_get(&st);
+    gps_link_stats_get(&ls);
+
+    info.uptime_ms   = plat_uptime_ms();
+    info.version     = APP_VERSION;
+    info.tx_frames   = ls.tx_frames;
+    info.tx_err      = ls.tx_err;
+    info.drop_latest = ls.drop_latest;
+    info.gps_ok      = st.gps_ok;
+    info.gps_err     = st.gps_err;
+    info.out         = cfg->out;
+    info.auto_mode   = cfg->auto_mode;
+    info.rate        = (uint8_t)cfg->rate;
+    info.sat_min     = cfg->sat_min;
+
+    if (0 == gps_link_send_info(&info)) {
+        printf("[link] info frame sent (TYPE=0x02, %u bytes)\r\n",
+               (unsigned)(LINK_TYPE_INFO + 2U + LINK_PAYLOAD_INFO + 5U));
+    } else {
+        printf("[link] info frame NOT sent\r\n");
+    }
+}
+
 static const cli_platform_t g_cli_plat = {
     .gps_send_line      = plat_gps_send_line,
     .gps_send_raw       = plat_gps_send_raw,
@@ -356,6 +492,8 @@ static const cli_platform_t g_cli_plat = {
     .out_unlock         = plat_out_unlock,
     .system_reset       = plat_system_reset,
     .uptime_ms          = plat_uptime_ms,
+    .gps_hw_reset       = plat_gps_hw_reset,
+    .link_info_send     = plat_link_info_send,
 };
 
 
@@ -442,27 +580,28 @@ void LED_Task(void *pvParameters)
     {
         gd_eval_led_on(LED1);
         vTaskDelay(500);      
-        gd_eval_led_off(LED1);
-        vTaskDelay(500);        
+                gd_eval_led_off(LED1);
+        vTaskDelay(500);        /* 灭 500 ms */
+    }
 }
+
 
 GPS_Module_Info GPS_Info;
 void RX_Task(void *pvParameters)
 {
-    uint16_t len;
+    /* 一次取一段交给解释器：进来的可能是一行、半行或多行，解释器自己拼行。
+      * 取空为止，避免一次中断只处理一小段而留下积压。 */
+    uint8_t  chunk[CLI_LINE_MAX];
+    uint16_t n;
+
     while(1)
     {
         if(xSemaphoreTake(RX_Semaph, portMAX_DELAY) == pdTRUE)
         {
-            len = usart0_rx_len;
-            if(len >= USART0_RX_BUF_SIZE)
+            while(0U != (n = usart0_rx_ring_pop(chunk, (uint16_t)sizeof(chunk))))
             {
-                len = USART0_RX_BUF_SIZE - 1U;
+                cli_input((const uint8_t *)chunk, n);
             }
-            memcpy(usart0_frame_buf, usart0_rx_buf, len);
-            usart0_frame_buf[len] = '\0';
-            /* 命令解释器入口: 进来的可能是一行、半行或多行 */
-            cli_input((const uint8_t *)usart0_frame_buf, len);
         }
     }
 }
@@ -489,33 +628,63 @@ void TX_Task(void *pvParameters)
     {
         if(xSemaphoreTake(GPSDeal_Semaph,0)==pdTRUE)
         {
-            gps_fix_t   fix;
-            const char *p = (const char *)usart5_frame_buf;
+            char     *p = (char *)usart5_frame_buf;
+            char     *line;
+            uint16_t  line_len;
+            uint16_t  copy;
 
-            /* 一帧里可能同时含 GPYBM 与 GPNAV，逐句解析。
+            /* 逐条语句处理：解析、下行、控制台都按“一条完整语句”走。
               * 解析与下发始终执行(下行链路与控制台模式无关)，
               * 只有控制台报告受 mode 与 verbose 控制。 */
-            while(NULL != (p = gps_fix_next(p, &fix)))
+            while(NULL != (line = gps_line_next(&p, &line_len)))
             {
-                if(GPS_SRC_NONE == fix.source){
-                    cli_stat_gps(0);                 /* 校验和或格式错：整句丢弃 */
-                    continue;
+                gps_fix_t fix;
+                uint8_t   valid;
+
+                memset(&fix, 0, sizeof(fix));
+
+                /* 解析用去掉 CR/LF 的副本，下行仍发原始字节 */
+                copy = line_len;
+                if(copy >= (uint16_t)sizeof(s_gps_line))
+                {
+                    copy = (uint16_t)(sizeof(s_gps_line) - 1U);
                 }
-                cli_stat_gps(1);
-                GPS_Info = fix.info;                 /* 同步维护旧符号，老代码仍可用 */
-
-                /* 给第二颗 MCU 的最新值；flag bit1 表示数据来源 */
-                gps_link_publish_fix(&fix.info,
-                                     (GPS_SRC_GPYBM == fix.source) ? 1U : 0U,
-                                     fix.valid);
-
-                if((OUTPUT_STATE==WORKED) && cli_config_get()->verbose){
-                    gps_report_print(&fix);
+                memcpy(s_gps_line, line, copy);
+                s_gps_line[copy] = '\0';
+                while((copy > 0U) &&
+                      (('\r' == s_gps_line[copy - 1U]) || ('\n' == s_gps_line[copy - 1U])))
+                {
+                    s_gps_line[--copy] = '\0';
                 }
-            }
 
-            if(OUTPUT_STATE==RAW){
-                printf("%s", usart5_frame_buf);
+                if(0 != gps_fix_parse_one(s_gps_line, &fix))
+                {
+                    cli_stat_gps(1);
+                    valid = fix.valid;
+                    if((uint8_t)fix.info.GPS_Satellite < cli_config_get()->sat_min)
+                    {
+                        valid = 0U;            /* 星数门槛：sat_min 参与有效性判定 */
+                    }
+                    GPS_Info = fix.info;       /* 同步维护旧符号，老代码仍可用 */
+                    gps_link_publish_fix(&fix.info,
+                                         (GPS_SRC_GPYBM == fix.source) ? 1U : 0U,
+                                         valid);
+
+                    if((OUTPUT_STATE==WORKED) && cli_config_get()->verbose){
+                        gps_report_print(&fix);
+                    }
+                }
+                else
+                {
+                    cli_stat_gps(0);           /* 校验和或格式错：整句丢弃 */
+                }
+
+                /* 原报文下行：一条语句一帧，含它自己的 CRLF */
+                gps_link_publish_raw((const uint8_t *)line, line_len);
+
+                if(OUTPUT_STATE==RAW){
+                    printf("%s\r\n", s_gps_line);
+                }
             }
         }
 
@@ -526,20 +695,78 @@ void TX_Task(void *pvParameters)
 
 void GPSRX_Task(void *pvParameters)
 {
-    uint16_t len;
+    uint16_t len, keep, cut, i, off;
+
     while(1)
     {
-        xSemaphoreTake(GPSRX_Semaph,portMAX_DELAY);
+        xSemaphoreTake(GPSRX_Semaph, portMAX_DELAY);
+
         len = usart5_rx_len;
         if(len >= USART5_RX_BUF_SIZE)
         {
             len = USART5_RX_BUF_SIZE - 1U;
         }
-		memcpy(usart5_frame_buf,usart5_rx_buf,len);
 
-		gps_link_publish_raw(usart5_frame_buf, len);
-        usart5_frame_buf[len] = '\0';
-        xSemaphoreGive(GPSDeal_Semaph);
+        /* 接回上一块没凑成整行的尾巴 */
+        keep = s_gps_carry_len;
+        if((uint32_t)keep + (uint32_t)len > (uint32_t)sizeof(s_gps_carry))
+        {
+            keep = 0U;                      /* 一直收不到行结束符：当垃圾丢掉 */
+            s_gps_carry_len = 0U;
+            s_gps_carry_drop++;
+        }
+        memcpy(&s_gps_carry[keep], usart5_rx_buf, len);
+        keep = (uint16_t)(keep + len);
+
+        /* 找到最后一个行结束符：它之前(含)都是完整语句，之后留给下一块 */
+        cut = 0U;
+        for(i = 0U; i < keep; i++)
+        {
+            if('\n' == s_gps_carry[i])
+            {
+                cut = (uint16_t)(i + 1U);
+            }
+            else if('\r' == s_gps_carry[i])
+            {
+                cut = (uint16_t)(i + 1U);
+                if(((uint16_t)(i + 1U) < keep) && ('\n' == s_gps_carry[i + 1U]))
+                {
+                    cut = (uint16_t)(i + 2U);
+                    i++;
+                }
+            }
+        }
+
+        if(0U != cut)
+        {
+            off = 0U;
+            if(cut > (uint16_t)(USART5_RX_BUF_SIZE - 1U))
+            {
+                /* 极端情况：积压的完整行超过缓冲，丢掉最前面一段 */
+                off = (uint16_t)(cut - (USART5_RX_BUF_SIZE - 1U));
+                cut = (uint16_t)(USART5_RX_BUF_SIZE - 1U);
+                s_gps_carry_drop++;
+            }
+            memcpy(usart5_frame_buf, &s_gps_carry[off], cut);
+            usart5_frame_buf[cut] = '\0';
+
+            s_gps_carry_len = (uint16_t)(keep - off - cut);
+            if(0U != s_gps_carry_len)
+            {
+                memmove(s_gps_carry, &s_gps_carry[off + cut], s_gps_carry_len);
+            }
+            xSemaphoreGive(GPSDeal_Semaph);
+        }
+        else
+        {
+            /* 还没有完整语句：留着，不惊动解析任务 */
+            s_gps_carry_len = keep;
+            if(keep >= (uint16_t)(sizeof(s_gps_carry) - 1U))
+            {
+                s_gps_carry_len = 0U;
+                s_gps_carry_drop++;
+            }
+        }
     }
 }
 

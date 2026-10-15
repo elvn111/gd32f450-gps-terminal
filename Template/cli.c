@@ -274,6 +274,7 @@ static int cmd_out(int argc, char **argv);
 static int cmd_auto(int argc, char **argv);
 static int cmd_fix(int argc, char **argv);
 static int cmd_gstat(int argc, char **argv);
+static int cmd_info(int argc, char **argv);
 static int cmd_bridge(int argc, char **argv);
 static int cmd_gps(int argc, char **argv);
 static int cmd_save(int argc, char **argv);
@@ -296,6 +297,7 @@ static const cli_cmd_t s_cmds[] = {
     { "auto",    "auto off|fix|tick [hz]  down-link trigger and rate limit",    cmd_auto },
     { "fix",     "fix                   send the newest value once, right now", cmd_fix },
     { "gstat",   "gstat                 console + down-link statistics",        cmd_gstat },
+    { "info",    "info                  send the terminal info frame (TYPE=0x02)", cmd_info },
     { "bridge",  "bridge on|off         transparent pipe GPS<->port, commands off", cmd_bridge },
     { "gps",     "gps <cmd...>          GPS passthrough / log / init / reset / info", cmd_gps },
     { "save",    "save                  store config to flash",                cmd_save },
@@ -679,6 +681,19 @@ static int gps_send(const char *line)
     return 0;
 }
 
+static int cmd_info(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+
+    if (NULL == s_plat.link_info_send) {
+        printf("[cli] info: hook not implemented\r\n");
+        return -1;
+    }
+    s_plat.link_info_send();
+    return 0;
+}
+
 static int cmd_gps(int argc, char **argv)
 {
     int i;
@@ -692,7 +707,10 @@ static int cmd_gps(int argc, char **argv)
                "      gps ver                 -> version\r\n"
                "      gps scene <name>        -> set appscene <name>\r\n"
                "      gps baud <rate>         -> config com1 <rate>, then local USART5\r\n"
-               "      gps init | reset | info\r\n");
+               "      gps init                -> re-send the boot preset list\r\n"
+               "      gps hwreset             -> pull PB4 low: the module reboots\r\n"
+               "      gps freset              -> module FACTORY reset (clears its config)\r\n"
+               "      gps info                -> print the last parsed fix\r\n");
         return -1;
     }
     if (0 == strcmp(argv[1], "info")) {
@@ -712,9 +730,21 @@ static int cmd_gps(int argc, char **argv)
         }
         return 0;
     }
-    if (0 == strcmp(argv[1], "reset")) {
+    if (0 == strcmp(argv[1], "freset")) {
         printf("[gps] WARNING: freset is a module FACTORY reset\r\n");
         return gps_send("freset");
+    }
+    if (0 == strcmp(argv[1], "hwreset")) {
+        if (NULL == s_plat.gps_hw_reset) {
+            printf("[cli] gps hwreset: hook not implemented\r\n");
+            return -1;
+        }
+        s_plat.gps_hw_reset();
+        return 0;
+    }
+    if (0 == strcmp(argv[1], "reset")) {
+        printf("[gps] 'gps reset' is gone: use 'gps hwreset' (PB4) or 'gps freset' (factory)\r\n");
+        return -1;
     }
     if (0 == strcmp(argv[1], "unlog")) {
         return gps_send("unlogall");
@@ -1229,6 +1259,19 @@ void cli_stat_gps(int ok)
     } else {
         s_gps_err++;
     }
+}
+
+void cli_stats_get(cli_stats_t *out)
+{
+    if (NULL == out) {
+        return;
+    }
+    out->rx_frames = s_rx_frames;
+    out->rx_bytes  = s_rx_bytes;
+    out->cmds      = s_cmd_count;
+    out->unknown   = s_err_unknown;
+    out->gps_ok    = s_gps_ok;
+    out->gps_err   = s_gps_err;
 }
 
 void cli_init(const cli_platform_t *plat)
