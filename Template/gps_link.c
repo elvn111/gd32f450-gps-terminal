@@ -47,7 +47,8 @@ static uint16_t     s_seq;
 static uint32_t s_tx_frames, s_tx_bytes, s_drop_latest, s_tx_err;
 static int32_t  s_last_err;
 
-/* CRC-16/CCITT-FALSE：多项式 0x1021，初值 0xFFFF，输入输出都不反转、不异或 */
+/* CRC-16/MODBUS：多项式 0x8005(反射写法 0xA001)，初值 0xFFFF，
+  * 输入输出均反射、结果不异或。标准校验向量 "123456789" = 0x4B37 */
 static uint16_t link_crc16(const uint8_t *data, uint16_t len)
 {
     uint16_t crc = 0xFFFFU;
@@ -55,16 +56,52 @@ static uint16_t link_crc16(const uint8_t *data, uint16_t len)
     uint8_t  b;
 
     for (i = 0U; i < len; i++) {
-        crc ^= (uint16_t)((uint16_t)data[i] << 8);
+        crc ^= (uint16_t)data[i];
         for (b = 0U; b < 8U; b++) {
-            if (0U != (crc & 0x8000U)) {
-                crc = (uint16_t)((uint16_t)(crc << 1) ^ 0x1021U);
+            if (0U != (crc & 0x0001U)) {
+                crc = (uint16_t)((uint16_t)(crc >> 1) ^ 0xA001U);
             } else {
-                crc = (uint16_t)(crc << 1);
+                crc = (uint16_t)(crc >> 1);
             }
         }
     }
     return crc;
+}
+
+/* 组帧：把 命令码/功能码/数据 封成一帧，返回帧总长(10 + n)。
+  * buf 由调用者提供，长度至少 LINK_FRAME_MAX。 */
+static uint16_t link_build(uint8_t *buf, uint8_t cmd, uint8_t func,
+                           const uint8_t *data, uint16_t n)
+{
+    uint16_t crc;
+    uint16_t i = 0U;
+
+    buf[i++] = LINK_HEAD0;
+    buf[i++] = LINK_HEAD1;
+    buf[i++] = cmd;
+    buf[i++] = func;
+    buf[i++] = (uint8_t)(n & 0xFFU);            /* 长度小端 */
+    buf[i++] = (uint8_t)(n >> 8U);
+    if ((NULL != data) && (0U != n)) {
+        memcpy(&buf[i], data, n);
+        i = (uint16_t)(i + n);
+    }
+    crc = link_crc16(buf, i);                   /* 帧头…数据段结束 */
+    buf[i++] = (uint8_t)(crc & 0xFFU);          /* CRC 低字节在前 */
+    buf[i++] = (uint8_t)(crc >> 8U);
+    buf[i++] = LINK_TAIL0;
+    buf[i++] = LINK_TAIL1;
+    return i;
+}
+
+/* 小端写入一个 32 位量，返回新的写入位置 */
+static uint16_t link_put_u32(uint8_t *buf, uint16_t i, uint32_t v)
+{
+    buf[i++] = (uint8_t)(v & 0xFFU);
+    buf[i++] = (uint8_t)((v >> 8U) & 0xFFU);
+    buf[i++] = (uint8_t)((v >> 16U) & 0xFFU);
+    buf[i++] = (uint8_t)((v >> 24U) & 0xFFU);
+    return i;
 }
 
 /* 发送：一次原子 DMA 突发 */
@@ -117,13 +154,46 @@ static int link_tx(const uint8_t *buf, uint16_t len)
     return 0;
 }
 
-/* 发布新值(保最新) */
-static void link_publish_packet(const uint8_t *frame, uint16_t len)
+/* 发布新值(保最新)：直接组帧进空闲的乒乓槽，避免大缓冲占任务栈 */
+void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t valid)
 {
-    uint8_t target = (s_pkt_busy == 0U) ? 1U : 0U;   /* 不写正在发送的那个缓冲 */
+    uint8_t target = (0U == s_pkt_busy) ? 1U : 0U;   /* 不写正在发送的那个缓冲 */
+    uint8_t data[LINK_N_FIX];
+    uint16_t i = 2U;
 
-    memcpy(s_pkt[target].buf, frame, len);
-    s_pkt[target].len  = len;
+    if (NULL == info) {
+        return;
+    }
+
+    data[0] = (uint8_t)(s_seq & 0xFFU);         /* 上报帧数据段前 2 字节 = 帧序号 */
+    data[1] = (uint8_t)(s_seq >> 8U);
+
+    {
+        int32_t lat = (int32_t)((info->latitude >= 0.0) ? (info->latitude * 10000000.0 + 0.5)
+                                                        : (info->latitude * 10000000.0 - 0.5));
+        int32_t lon = (int32_t)((info->longitude >= 0.0) ? (info->longitude * 10000000.0 + 0.5)
+                                                         : (info->longitude * 10000000.0 - 0.5));
+        int32_t hgt = (int32_t)((info->ElpHeight >= 0.0) ? (info->ElpHeight * 1000.0 + 0.5)
+                                                         : (info->ElpHeight * 1000.0 - 0.5));
+        uint16_t head = (uint16_t)(info->Heading_Angle * 100.0);
+        uint32_t base = (uint32_t)(info->Baseline * 1000.0);
+
+        memcpy(&data[i], &lat, 4U);  i += 4U;
+        memcpy(&data[i], &lon, 4U);  i += 4U;
+        memcpy(&data[i], &hgt, 4U);  i += 4U;
+        memcpy(&data[i], &head, 2U); i += 2U;
+        memcpy(&data[i], &base, 4U); i += 4U;
+        data[i++] = (uint8_t)info->GPS_Satellite;
+        data[i++] = (uint8_t)((0U != valid ? LINK_FLAG_VALID : 0U) |
+                              (0U != source ? LINK_FLAG_SRC_GPYBM : 0U));
+        {
+            uint32_t t = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+            memcpy(&data[i], &t, 4U); i += 4U;
+        }
+    }
+
+    s_pkt[target].len  = link_build(s_pkt[target].buf, LINK_CMD_DATA, LINK_FUNC_FIX,
+                                    data, (uint16_t)sizeof(data));
     s_pkt[target].used = 1U;
     s_pkt_active = target;
 
@@ -131,55 +201,6 @@ static void link_publish_packet(const uint8_t *frame, uint16_t len)
         s_drop_latest++;                /* 上一个值还没发出去：覆盖它并计数 */
     }
     s_pending = 1U;
-}
-
-void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t valid)
-{
-    uint8_t     frame[LINK_FRAME_MAX];
-    gps_fix_payload_t pl;
-    uint16_t    crc;
-    uint16_t    len = LINK_TYPE_FIX + 2U + LINK_PAYLOAD_FIX;
-    uint16_t    i;
-
-    if (NULL == info) {
-        return;
-    }
-
-    pl.lat_e7 = (int32_t)((info->latitude >= 0.0) ? (info->latitude * 10000000.0 + 0.5)
-                                                 : (info->latitude * 10000000.0 - 0.5));
-    pl.lon_e7 = (int32_t)((info->longitude >= 0.0) ? (info->longitude * 10000000.0 + 0.5)
-                                                  : (info->longitude * 10000000.0 - 0.5));
-    pl.h_mm   = (int32_t)((info->ElpHeight >= 0.0) ? (info->ElpHeight * 1000.0 + 0.5)
-                                                   : (info->ElpHeight * 1000.0 - 0.5));
-    pl.head_cd = (uint16_t)(info->Heading_Angle * 100.0);
-    pl.base_mm = (uint32_t)(info->Baseline * 1000.0);
-    pl.sat     = (uint8_t)info->GPS_Satellite;
-    pl.flag    = (uint8_t)((0U != valid ? LINK_FLAG_VALID : 0U) |
-                           (0U != source ? LINK_FLAG_SRC_GPYBM : 0U));
-    pl.t_ms    = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
-
-    frame[0] = LINK_SOF0;
-    frame[1] = LINK_SOF1;
-    frame[2] = (uint8_t)len;
-    frame[3] = LINK_TYPE_FIX;
-    frame[4] = (uint8_t)(s_seq & 0xFFU);
-    frame[5] = (uint8_t)(s_seq >> 8);
-
-    i = 6U;
-    memcpy(&frame[i], &pl.lat_e7, 4U);  i += 4U;
-    memcpy(&frame[i], &pl.lon_e7, 4U);  i += 4U;
-    memcpy(&frame[i], &pl.h_mm,   4U);  i += 4U;
-    memcpy(&frame[i], &pl.head_cd, 2U); i += 2U;
-    memcpy(&frame[i], &pl.base_mm, 4U); i += 4U;
-    frame[i++] = pl.sat;
-    frame[i++] = pl.flag;
-    memcpy(&frame[i], &pl.t_ms, 4U);    i += 4U;
-
-    crc = link_crc16(&frame[3], (uint16_t)len);      /* TYPE..PAYLOAD 参与 CRC 计算 */
-    frame[i++] = (uint8_t)(crc & 0xFFU);
-    frame[i++] = (uint8_t)(crc >> 8);
-
-    link_publish_packet(frame, i);
 }
 
 void gps_link_publish_raw(const uint8_t *buf, uint16_t len)
@@ -290,51 +311,37 @@ void gps_link_stats_get(gps_link_stats_t *out)
     out->seq         = s_seq;
 }
 
-/* 终端信息帧：定长 40 字节，TYPE=0x02 */
+/* 一次性发送缓冲：只在命令上下文(当前为 RX_Task 的 info 命令)使用，
+  * 周期性上报走 ping-pong 槽，两者不冲突 */
+static uint8_t s_tx_one[LINK_FRAME_MAX];
+
+/* 终端信息帧：命令码 0x01 / 功能码 0x02，数据 = 帧序号(2) + 32 B 信息量 */
 int gps_link_send_info(const gps_link_info_t *info)
 {
-    uint8_t  frame[LINK_FRAME_MAX];
-    uint16_t len = (uint16_t)(LINK_TYPE_INFO + 2U + LINK_PAYLOAD_INFO);
-    uint16_t crc;
-    uint16_t i = 6U;
-    uint32_t v;
+    uint8_t  data[LINK_N_INFO];
+    uint16_t len;
+    uint16_t i = 2U;
 
     if (NULL == info) {
         return -1;
     }
 
-    frame[0] = LINK_SOF0;
-    frame[1] = LINK_SOF1;
-    frame[2] = (uint8_t)len;
-    frame[3] = LINK_TYPE_INFO;
-    frame[4] = (uint8_t)(s_seq & 0xFFU);
-    frame[5] = (uint8_t)(s_seq >> 8U);
+    data[0] = (uint8_t)(s_seq & 0xFFU);
+    data[1] = (uint8_t)(s_seq >> 8U);
+    i = link_put_u32(data, i, info->uptime_ms);
+    i = link_put_u32(data, i, info->version);
+    i = link_put_u32(data, i, info->tx_frames);
+    i = link_put_u32(data, i, info->tx_err);
+    i = link_put_u32(data, i, info->drop_latest);
+    i = link_put_u32(data, i, info->gps_ok);
+    i = link_put_u32(data, i, info->gps_err);
+    data[i++] = info->out;
+    data[i++] = info->auto_mode;
+    data[i++] = info->rate;
+    data[i++] = info->sat_min;
 
-    v = info->uptime_ms;  frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
-    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
-    v = info->version;    frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
-    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
-    v = info->tx_frames;  frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
-    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
-    v = info->tx_err;     frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
-    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
-    v = info->drop_latest;frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
-    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
-    v = info->gps_ok;     frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
-    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
-    v = info->gps_err;    frame[i++] = (uint8_t)(v & 0xFFU); frame[i++] = (uint8_t)((v >> 8) & 0xFFU);
-    frame[i++] = (uint8_t)((v >> 16) & 0xFFU); frame[i++] = (uint8_t)((v >> 24) & 0xFFU);
-
-    frame[i++] = info->out;
-    frame[i++] = info->auto_mode;
-    frame[i++] = info->rate;
-    frame[i++] = info->sat_min;
-
-    crc = link_crc16(&frame[3], len);                /* TYPE..PAYLOAD 参与 CRC 计算 */
-    frame[i++] = (uint8_t)(crc & 0xFFU);
-    frame[i++] = (uint8_t)(crc >> 8U);
-
-    if (0 != link_tx(frame, i)) {
+    len = link_build(s_tx_one, LINK_CMD_DATA, LINK_FUNC_INFO, data, (uint16_t)sizeof(data));
+    if (0 != link_tx(s_tx_one, len)) {
         return -1;
     }
     s_have_last    = 1U;
@@ -373,7 +380,7 @@ void gps_link_info(void)
     static const char *out_name[]  = { "off", "raw", "parsed" };
     static const char *auto_name[] = { "off", "fix", "tick" };
 
-    printf("[link] out=%s auto=%s rate=%lu Hz fmt=bin\r\n",
+    printf("[link] out=%s auto=%s rate=%lu Hz fmt=A6 6A/MODBUS\r\n",
            (cfg->out <= LINK_OUT_PARSED) ? out_name[cfg->out] : "?",
            (cfg->auto_mode <= LINK_AUTO_TICK) ? auto_name[cfg->auto_mode] : "?",
            (unsigned long)cfg->rate);

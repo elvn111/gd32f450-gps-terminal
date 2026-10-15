@@ -299,7 +299,7 @@ static const cli_cmd_t s_cmds[] = {
     { "auto",    "auto off|fix|tick [hz]  down-link trigger and rate limit",    cmd_auto },
     { "fix",     "fix                   send the newest value once, right now", cmd_fix },
     { "gstat",   "gstat                 console + down-link statistics",        cmd_gstat },
-    { "info",    "info                  send the terminal info frame (TYPE=0x02)", cmd_info },
+    { "info",    "info                  send the terminal info frame (cmd 0x01 / func 0x02)", cmd_info },
     { "bridge",  "bridge on|off         transparent pipe GPS<->port, commands off", cmd_bridge },
     { "gps",     "gps <cmd...>          GPS passthrough / log / init / reset / info", cmd_gps },
     { "save",    "save                  store config to flash",                cmd_save },

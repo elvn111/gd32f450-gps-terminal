@@ -438,7 +438,7 @@ static void plat_link_info(void)
     gps_link_info();
 }
 
-/* info 命令：把终端现状打包成一帧 TYPE=0x02 发给对端 */
+/* info 命令：把终端现状打包成一帧(命令码 0x01 / 功能码 0x02)发给对端 */
 static void plat_link_info_send(void)
 {
     const cli_config_t *cfg = cli_config_get();
@@ -465,8 +465,8 @@ static void plat_link_info_send(void)
     info.sat_min     = cfg->sat_min;
 
     if (0 == gps_link_send_info(&info)) {
-        printf("[link] info frame sent (TYPE=0x02, %u bytes)\r\n",
-               (unsigned)(LINK_TYPE_INFO + 2U + LINK_PAYLOAD_INFO + 5U));
+        printf("[link] info frame sent (cmd=0x01 func=0x02, %u bytes)\r\n",
+               (unsigned)(LINK_N_INFO + 10U));
     } else {
         printf("[link] info frame NOT sent\r\n");
     }

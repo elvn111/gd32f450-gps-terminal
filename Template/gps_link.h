@@ -24,15 +24,26 @@
 #define LINK_RATE_MIN       (1U)
 #define LINK_RATE_MAX       (20U)
 
-/* ---- 帧格式 ----
-  * SOF(A5 5A) | LEN(1) | TYPE(1) | SEQ(2) | PAYLOAD | CRC16(2)
-  * LEN = TYPE + SEQ + PAYLOAD 的字节数(不含 SOF/LEN/CRC)
-  * CRC = 对 LEN 覆盖范围做 CRC-16/CCITT-FALSE，线上小端 */
-#define LINK_SOF0           (0xA5U)
-#define LINK_SOF1           (0x5AU)
-#define LINK_TYPE_FIX       (0x01U)
-#define LINK_PAYLOAD_FIX    (24U)
-#define LINK_FRAME_MAX      (40U)
+/* ---- 帧格式（本工程统一格式）----
+  *   帧头(2) | 命令码(1) | 功能码(1) | 长度N(2,小端) | 数据(N) | CRC16(2,小端) | 帧尾(2)
+  *   帧头 = A6 6A，帧尾 = B7 7B，帧总长 = 10 + N
+  *   CRC = CRC-16/MODBUS，覆盖 帧头…数据段结束(6 + N 字节)，不含帧尾
+  *   定帧必须靠 N：数据段里可能出现 B7 7B（例如透传的模块文本），不能搜索帧尾
+  * 命令码 = 命令集，功能码 = 集内具体内容；上报帧的数据段前 2 字节是终端帧序号 */
+#define LINK_HEAD0          (0xA6U)
+#define LINK_HEAD1          (0x6AU)
+#define LINK_TAIL0          (0xB7U)
+#define LINK_TAIL1          (0x7BU)
+
+#define LINK_CMD_DATA       (0x01U)     /* 数据上报：终端 -> 对端 */
+#define LINK_FUNC_FIX       (0x01U)     /*   定位数据 */
+#define LINK_FUNC_INFO      (0x02U)     /*   终端信息 */
+
+#define LINK_PAYLOAD_FIX    (24U)       /* 定位量字节数 */
+#define LINK_PAYLOAD_INFO   (32U)       /* 信息量字节数 */
+#define LINK_N_FIX          (2U + LINK_PAYLOAD_FIX)    /* 26：帧序号 + 定位量 */
+#define LINK_N_INFO         (2U + LINK_PAYLOAD_INFO)   /* 34：帧序号 + 信息量 */
+#define LINK_FRAME_MAX      (266U)      /* 10 + N，N 上限 256（命令通道预留） */
 
 /* 定位帧 flag 位定义 */
 #define LINK_FLAG_VALID     (0x01U)     /* 卫星数达到 sat_min，定位可信 */
@@ -69,11 +80,8 @@ int gps_link_send_now(void);
 /* gstat 命令用的状态报告 */
 void gps_link_info(void);
 
-/* ---- TYPE = 0x02：终端信息帧 ----
-  * 给对端做上电自检与排障：固件版本、上电时长、计数器与当前下行配置。
-  * 载荷 32 字节、定长，帧总长 40 字节(等于 LINK_FRAME_MAX)。全部小端。 */
-#define LINK_TYPE_INFO      (0x02U)
-#define LINK_PAYLOAD_INFO   (32U)
+/* ---- 终端信息量（命令码 0x01 / 功能码 0x02 的数据段，去掉前 2 字节帧序号）----
+  * 给对端做上电自检与排障：固件版本、上电时长、计数器与当前下行配置。全部小端。 */
 
 typedef struct
 {
