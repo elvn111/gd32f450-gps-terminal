@@ -40,6 +40,7 @@ OF SUCH DAMAGE.
 #include "info_bsp.h"
 #include "buff_config.h"
 #include "cli.h"
+#include "version.h"
 #include "nvm_config.h"
 #include "gps_link.h"
 
@@ -313,8 +314,6 @@ static void plat_gps_info_print(void)
            (unsigned)cfg->sat_min);
 }
 
-/* 固件版本：major<<16 | minor<<8 | patch，随终端信息帧下发 */
-#define APP_VERSION             0x010200U
 
 /* 硬复位模块：PB4 拉低->释放->等它启动->重发预设命令。
   * 只能在任务里调用(vTaskDelay)。 */
@@ -454,7 +453,7 @@ static void plat_link_info_send(void)
     gps_link_stats_get(&ls);
 
     info.uptime_ms   = plat_uptime_ms();
-    info.version     = APP_VERSION;
+    info.version     = FW_VERSION_PACKED;   /* 版本号来自 version.h */
     info.tx_frames   = ls.tx_frames;
     info.tx_err      = ls.tx_err;
     info.drop_latest = ls.drop_latest;

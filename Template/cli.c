@@ -8,8 +8,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "cli.h"
+#include "version.h"
 
-#define CLI_VERSION   "1.3.0"
+/* 版本来自 version.h：文本界面用字符串，帧内用数字，两处不会再不一致 */
+#define CLI_VERSION   FW_VERSION_STRING
 
 /* printf 不可重入：本模块只在 RX_Task 里跑，并且整段输出都在控制台锁内，
   * 所以同一个时刻只有一个任务在打印。 */

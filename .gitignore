@@ -30,6 +30,12 @@ JLinkLog.txt
 *.orig
 *.rej
 
+# ---- VSCode / Keil Assistant 运行日志（每次编译都会变）----
+*.log
+*.log.lock
+.vscode/*.log
+.vscode/*.lock
+
 # ---- 测试编译产物 ----
 /tests/*.exe
 /tests/test_info_bsp_test
