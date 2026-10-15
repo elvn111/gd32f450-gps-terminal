@@ -1,0 +1,2630 @@
+/*!
+    \file    change log.txt
+    \brief   change log for GD32F4xx firmware
+
+    \version 2026-02-05, V3.3.3, firmware for GD32F4xx
+*/
+
+/*
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
+
+    Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this 
+       list of conditions and the following disclaimer.
+    2. Redistributions in binary form must reproduce the above copyright notice, 
+       this list of conditions and the following disclaimer in the documentation 
+       and/or other materials provided with the distribution.
+    3. Neither the name of the copyright holder nor the names of its contributors 
+       may be used to endorse or promote products derived from this software without 
+       specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+OF SUCH DAMAGE.
+*/
+
+******************* V3.3.3 2026-02-05 ******************************************************************************************
+______________________Common______________________________________________________________________________________________
+\GD32F4xx_Firmware_Library\GD32F4xx_Firmware_Library\Template\GD32EBuilder_project
+fix reason: 
+add GD32EBuilder roject
+
+V3.3.2:
+none
+
+V3.3.3:
+add following files:
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/CMSIS/GD/GD32F4xx/Source/GCC
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Template/GD32EBuilder_project
+
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_i2c.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_can.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_timer.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_dac.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_exti.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_misc.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_rtc.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RTC/Auto_wakeup/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RTC/Calendar_alarm/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RTC/Tamper_with_timestamp/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RTC/Timestamp/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_ipa.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_syscfg.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_ctc.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_exmc.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_tli.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/EXMC/NAND/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/EXMC/NORFLASH/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/EXMC/SDRAM/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/EXMC/SRAM/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/SPI/SPI_master_transmit_slave_receive_interrupt/readme.txt
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/DMA_transmitter&receiver_interrupt/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/Dma_transmitter&receiver/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/Half_duplex_transmitter&receiver/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/IDLE_receive_interrupt/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/Printf/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/Receivertimeout/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/Transmitter&receiver_interrupt/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RCU/Ckout_pin_clock_output/gd32f4xx_it.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RCU/Ckout_pin_clock_output/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RCU/Reset_source_detect/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/RCU/System_clock_switch/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_rcu.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_trng.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/TRNG/TRNG_poll_mode/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/ENET/Telnet/src/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_dma.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_gpio.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_gpio.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_spi.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_usart.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/FMC/Program_erase/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/FMC/Write_protection/main.c
+
+fix reason: 
+Fix drivers that do not comply with the MISRA 14.7 rule delete the printf remap
+
+V3.3.2:
+A function with multiple return values; delete the printf remap
+
+V3.3.3:
+A function with a single return value; delete the printf remap
+
+_______________________________________________________________________________________________________________________ 
+
+______________________TRNG________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/TRNG/TRNG_poll_mode/gd32f4xx_it.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/TRNG/TRNG_poll_mode/main.c
+fix reason: 
+add volatile key word in key var
+
+V3.3.2:
+NONE
+V3.3.3:
+volatile
+__________________________________________________________________________________________________________________________
+
+______________________USB________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_usb_library/device/class/iap/Source/usb_iap_core.c
+fix reason: 
+Modify the default EB configuration and change the IAP jump code
+V3.3.2:
+    /* reset register */
+    register_reset();
+    /* jump to target */
+    jump_to_execute(iap->base_address);
+V3.3.3:
+    /* generate system reset to allow jumping to the user code */
+    NVIC_SystemReset();
+__________________________________________________________________________________________________________________________
+
+______________________IPA________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/IPA/IPA_2images_blend/logo.h
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/IPA/IPA_2images_blend/logo2.h
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/IPA/IPA_image_copy/image_copy.h
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/IPA/IPA_image_copy/logo.h
+fix reason: 
+Add 4-byte alignment(Fix the issue of running under high optimization level in EB)
+V3.3.2:
+NONE
+V3.3.3:
+#if defined(__GNUC__)
+    __attribute__((aligned(4))) const unsigned char gImage_logo[73280] = { /* 0X00,0X10,0XE5,0X00,0XA0,0X00,0X01,0X1B, */
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
+    __align(4) const unsigned char gImage_logo[73280] = { /* 0X00,0X10,0XE5,0X00,0XA0,0X00,0X01,0X1B, */
+#elif defined(__ICCARM__)
+    #pragma data_alignment=4
+    const unsigned char gImage_logo[73280] = { /* 0X00,0X10,0XE5,0X00,0XA0,0X00,0X01,0X1B, */
+#else
+    const unsigned char gImage_logo[73280] = { /* 0X00,0X10,0XE5,0X00,0XA0,0X00,0X01,0X1B, */
+#endif
+__________________________________________________________________________________________________________________________
+
+______________________SDIO________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/SDIO/Read_write/main.c
+
+fix reason: 
+Support addresses larger than 4GB in sd_block_read/sd_multiblocks_read/sd_block_write/sd_multiblocks_write/sd_erase
+
+V3.3.2:
+1.    sd_error = sd_block_write(buf_write, 100 * 512, 512);
+2.    sd_error = sd_block_read(buf_read, 100 * 512, 512);
+3.        sd_error = sd_erase(100 * 512, 101 * 512);
+4.        sd_error = sd_erase(100 * 512, 101 * 512);
+5.        sd_error = sd_block_read(buf_read, 100 * 512, 512);
+6.    sd_error = sd_multiblocks_write(buf_write, 200 * 512, 512, 3);
+7.    sd_error = sd_multiblocks_read(buf_read, 200 * 512, 512, 3);
+
+V3.3.3:
+1.    sd_error = sd_block_write(buf_write, 100, 512);
+2.    sd_error = sd_block_read(buf_read, 100, 512);
+3.        sd_error = sd_erase(100, 101);
+4.        sd_error = sd_erase(100, 101);
+5.        sd_error = sd_block_read(buf_read, 100, 512);
+6.    sd_error = sd_multiblocks_write(buf_write, 200, 512, 3);
+7.    sd_error = sd_multiblocks_read(buf_read, 200, 512, 3);
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/SDIO/Read_write/sdcard.c
+
+fix reason: 
+Support addresses larger than 4GB in sd_block_read/sd_multiblocks_read/sd_block_write/sd_multiblocks_write/sd_erase
+V3.3.2:
+    /* blocksize is fixed in 512B for SDHC card */
+    if(SDIO_HIGH_CAPACITY_SD_CARD == cardtype) {
+        blocksize = 512;
+        readaddr /= 512;
+    }
+
+
+V3.3.3:
+    /* blocksize is fixed in 512B for SDHC card */
+    if(SDIO_HIGH_CAPACITY_SD_CARD != cardtype) {
+        startaddr *= 512U;
+        endaddr *= 512U;
+    }
+__________________________________________________________________________________________________________________________
+
+__________________FMC________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/FMC/Program_erase/fmc_operation.c
+
+fix reason: 
+Remove the Flash erase-related logic from the FMC example
+
+V3.3.2:
+void fmc_write_32bit_data(uint32_t address, uint16_t length, int32_t *data_32)
+{
+    fmc_sector_info_struct start_sector_info;
+    fmc_sector_info_struct end_sector_info;
+    uint32_t sector_num, i;
+
+    printf("\r\nFMC word programe operation:\n");
+    /* unlock the flash program erase controller */
+    fmc_unlock();
+    /* clear pending flags */
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
+    /* get the information of the start and end sectors */
+    start_sector_info = fmc_sector_info_get(address);
+    end_sector_info = fmc_sector_info_get(address + 4 * length);
+    /* erase sector */
+    for(i = start_sector_info.sector_name; i <= end_sector_info.sector_name; i++) {
+        sector_num = sector_name_to_number(i);
+        if(FMC_READY != fmc_sector_erase(sector_num)) {
+            while(1);
+        }
+    }
+
+    /* write data_32 to the corresponding address */
+    for(i = 0; i < length; i++) {
+        if(FMC_READY == fmc_word_program(address, data_32[i])) {
+            address = address + 4;
+        } else {
+            while(1);
+        }
+    }
+    /* lock the flash program erase controller */
+    fmc_lock();
+    printf("\r\nWrite complete!\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      read 32 bit length data from a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_32: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_read_32bit_data(uint32_t address, uint16_t length, int32_t *data_32)
+{
+    uint8_t i;
+    printf("\r\nRead data from 0x%08X\n", address);
+    printf("\r\n");
+    for(i = 0; i < length; i++) {
+        data_32[i] = *(__IO int32_t *)address;
+        printf("0x%08X  ", data_32[i]);
+        address = address + 4;
+    }
+    printf("\r\nRead end\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      write 16 bit length data to a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_16: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_write_16bit_data(uint32_t address, uint16_t length, int16_t *data_16)
+{
+    fmc_sector_info_struct start_sector_info;
+    fmc_sector_info_struct end_sector_info;
+    uint32_t sector_num, i;
+
+    printf("\r\nFMC half_word program operation:\n");
+    /* unlock the flash program erase controller */
+    fmc_unlock();
+    /* clear pending flags */
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
+    /* get the information of the start and end sectors */
+    start_sector_info = fmc_sector_info_get(address);
+    end_sector_info = fmc_sector_info_get(address + 2 * length);
+    /* erase sector */
+    for(i = start_sector_info.sector_name; i <= end_sector_info.sector_name; i++) {
+        sector_num = sector_name_to_number(i);
+        if(FMC_READY != fmc_sector_erase(sector_num)) {
+            while(1);
+        }
+    }
+
+    /* write data_16 to the corresponding address */
+    for(i = 0; i < length; i++) {
+        if(FMC_READY == fmc_halfword_program(address, data_16[i])) {
+            address = address + 2;
+        } else {
+            while(1);
+        }
+    }
+    /* lock the flash program erase controller */
+    fmc_lock();
+    printf("\r\nWrite complete!\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      read 16 bit length data to a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_16: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_read_16bit_data(uint32_t address, uint16_t length, int16_t *data_16)
+{
+    uint8_t i;
+    printf("\r\nRead data from 0x%04X\n", address);
+    printf("\r\n");
+    for(i = 0; i < length; i++) {
+        data_16[i] = *(__IO int16_t *)address;
+        printf("0x%04X  ", data_16[i]);
+        address = address + 2;
+    }
+    printf("\r\nRead end\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      write 8 bit length data to a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_8: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_write_8bit_data(uint32_t address, uint16_t length, int8_t *data_8)
+{
+    fmc_sector_info_struct start_sector_info;
+    fmc_sector_info_struct end_sector_info;
+    uint32_t sector_num, i;
+
+    printf("\r\nFMC half_word program operation:\n");
+    /* unlock the flash program erase controller */
+    fmc_unlock();
+    /* clear pending flags */
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
+    /* get the information of the start and end sectors */
+    start_sector_info = fmc_sector_info_get(address);
+    end_sector_info = fmc_sector_info_get(address + 2 * length);
+    /* erase sector */
+    for(i = start_sector_info.sector_name; i <= end_sector_info.sector_name; i++) {
+        sector_num = sector_name_to_number(i);
+        if(FMC_READY != fmc_sector_erase(sector_num)) {
+            while(1);
+        }
+    }
+
+    /* write data_8 to the corresponding address */
+    for(i = 0; i < length; i++) {
+        if(FMC_READY == fmc_byte_program(address, data_8[i])) {
+            address++;
+        } else {
+            while(1);
+        }
+    }
+    /* lock the flash program erase controller */
+    fmc_lock();
+    printf("\r\nWrite complete!\n");
+    printf("\r\n");
+}
+
+V3.3.3:
+void fmc_write_32bit_data(uint32_t address, uint16_t length, int32_t *data_32)
+{
+    uint32_t i;
+
+    printf("\r\nFMC word programe operation:\n");
+    /* unlock the flash program erase controller */
+    fmc_unlock();
+    /* clear pending flags */
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
+
+    /* write data_32 to the corresponding address */
+    for(i = 0; i < length; i++) {
+        if(FMC_READY == fmc_word_program(address, data_32[i])) {
+            address = address + 4;
+        } else {
+            while(1);
+        }
+    }
+    /* lock the flash program erase controller */
+    fmc_lock();
+    printf("\r\nWrite complete!\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      read 32 bit length data from a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_32: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_read_32bit_data(uint32_t address, uint16_t length, int32_t *data_32)
+{
+    uint8_t i;
+    printf("\r\nRead data from 0x%08X\n", address);
+    printf("\r\n");
+    for(i = 0; i < length; i++) {
+        data_32[i] = *(__IO int32_t *)address;
+        printf("0x%08X  ", data_32[i]);
+        address = address + 4;
+    }
+    printf("\r\nRead end\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      write 16 bit length data to a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_16: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_write_16bit_data(uint32_t address, uint16_t length, int16_t *data_16)
+{
+    uint32_t i;
+
+    printf("\r\nFMC half_word program operation:\n");
+    /* unlock the flash program erase controller */
+    fmc_unlock();
+    /* clear pending flags */
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
+
+    /* write data_16 to the corresponding address */
+    for(i = 0; i < length; i++) {
+        if(FMC_READY == fmc_halfword_program(address, data_16[i])) {
+            address = address + 2;
+        } else {
+            while(1);
+        }
+    }
+    /* lock the flash program erase controller */
+    fmc_lock();
+    printf("\r\nWrite complete!\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      read 16 bit length data to a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_16: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_read_16bit_data(uint32_t address, uint16_t length, int16_t *data_16)
+{
+    uint8_t i;
+    printf("\r\nRead data from 0x%04X\n", address);
+    printf("\r\n");
+    for(i = 0; i < length; i++) {
+        data_16[i] = *(__IO int16_t *)address;
+        printf("0x%04X  ", data_16[i]);
+        address = address + 2;
+    }
+    printf("\r\nRead end\n");
+    printf("\r\n");
+}
+
+/*!
+    \brief      write 8 bit length data to a given address
+    \param[in]  address: a given address(0x08000000~0x082FFFFF)
+    \param[in]  length: data length
+    \param[in]  data_8: data pointer
+    \param[out] none
+    \retval     none
+*/
+void fmc_write_8bit_data(uint32_t address, uint16_t length, int8_t *data_8)
+{
+    uint32_t i;
+    printf("\r\nFMC byte program operation:\n");
+    /* unlock the flash program erase controller */
+    fmc_unlock();
+    /* clear pending flags */
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
+
+    /* write data_8 to the corresponding address */
+    for(i = 0; i < length; i++) {
+        if(FMC_READY == fmc_byte_program(address, data_8[i])) {
+            address++;
+        } else {
+            while(1);
+        }
+    }
+    /* lock the flash program erase controller */
+    fmc_lock();
+    printf("\r\nWrite complete!\n");
+    printf("\r\n");
+}
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_fmc.c
+fix reason:
+Remove the Flash erase-related logic from the FMC example
+V3.3.2:
+/*!
+    \brief    enable write protection
+    \param[in]  ob_wp: specify sector to be write protected
+                one or more parameters can be selected which are shown as below:
+      \arg        OB_WP_x(x=0..22):sector x(x = 0,1,2...22)
+      \arg        OB_WP_23_27: sector23~27
+      \arg        OB_WP_ALL: all sector
+    \param[out] none
+    \retval     SUCCESS or ERROR
+*/
+ErrStatus ob_write_protection_enable(uint32_t ob_wp)
+{
+    uint32_t reg0 = FMC_OBCTL0;
+    uint32_t reg1 = FMC_OBCTL1;
+    fmc_state_enum fmc_state = FMC_READY;
+    if(RESET != (FMC_OBCTL0 & FMC_OBCTL0_DRP)) {
+        return ERROR;
+    }
+    /* wait for the FMC ready */
+    fmc_state = fmc_ready_wait(FMC_TIMEOUT_COUNT);
+
+    if(FMC_READY == fmc_state) {
+        reg0 &= (~((uint32_t)ob_wp << 16U));
+        reg1 &= (~(ob_wp & 0xFFFF0000U));
+        FMC_OBCTL0 = reg0;
+        FMC_OBCTL1 = reg1;
+
+        return SUCCESS;
+    } else {
+        return ERROR;
+    }
+}
+
+/*!
+    \brief    disable write protection
+    \param[in]  ob_wp: specify sector to be write protected
+                one or more parameters can be selected which are shown as below:
+      \arg        OB_WP_x(x=0..22):sector x(x = 0,1,2...22)
+      \arg        OB_WP_23_27: sector23~27
+      \arg        OB_WP_ALL: all sector
+    \param[out] none
+    \retval     SUCCESS or ERROR
+*/
+ErrStatus ob_write_protection_disable(uint32_t ob_wp)
+{
+    uint32_t reg0 = FMC_OBCTL0;
+    uint32_t reg1 = FMC_OBCTL1;
+    fmc_state_enum fmc_state = FMC_READY;
+    if(RESET != (FMC_OBCTL0 & FMC_OBCTL0_DRP)) {
+        return ERROR;
+    }
+    /* wait for the FMC ready */
+    fmc_state = fmc_ready_wait(FMC_TIMEOUT_COUNT);
+
+    if(FMC_READY == fmc_state) {
+        reg0 |= ((uint32_t)ob_wp << 16U);
+        reg1 |= (ob_wp & 0xFFFF0000U);
+        FMC_OBCTL0 = reg0;
+        FMC_OBCTL1 = reg1;
+
+        return SUCCESS;
+    } else {
+        return ERROR;
+    }
+}
+
+V3.3.3:
+ErrStatus ob_write_protection_enable(uint32_t ob_wp)
+{
+    ErrStatus retval = SUCCESS;
+    uint32_t reg0 = FMC_OBCTL0;
+    uint32_t reg1 = FMC_OBCTL1;
+    fmc_state_enum fmc_state = FMC_READY;
+    if(RESET != (FMC_OBCTL0 & FMC_OBCTL0_DRP)) {
+        retval = ERROR;
+    } else {
+        /* wait for the FMC ready */
+        fmc_state = fmc_ready_wait(FMC_TIMEOUT_COUNT);
+        
+        if(FMC_READY == fmc_state) {
+            reg0 &= (~((uint32_t)ob_wp << 16U));
+            reg1 &= (~(ob_wp & 0xFFFF0000U));
+            FMC_OBCTL0 = reg0;
+            FMC_OBCTL1 = reg1;
+        
+            retval = SUCCESS;
+        } else {
+            retval = ERROR;
+        }
+    }
+    return retval;
+}
+
+/*!
+    \brief    disable write protection
+    \param[in]  ob_wp: specify sector to be write protected
+                one or more parameters can be selected which are shown as below:
+      \arg        OB_WP_x(x=0..22):sector x(x = 0,1,2...22)
+      \arg        OB_WP_23_27: sector23~27
+      \arg        OB_WP_ALL: all sector
+    \param[out] none
+    \retval     SUCCESS or ERROR
+*/
+ErrStatus ob_write_protection_disable(uint32_t ob_wp)
+{
+    ErrStatus retval = SUCCESS;
+    uint32_t reg0 = FMC_OBCTL0;
+    uint32_t reg1 = FMC_OBCTL1;
+    fmc_state_enum fmc_state = FMC_READY;
+    if(RESET != (FMC_OBCTL0 & FMC_OBCTL0_DRP)) {
+        retval = ERROR;
+    } else {
+        /* wait for the FMC ready */
+        fmc_state = fmc_ready_wait(FMC_TIMEOUT_COUNT);
+        
+        if(FMC_READY == fmc_state) {
+            reg0 |= ((uint32_t)ob_wp << 16U);
+            reg1 |= (ob_wp & 0xFFFF0000U);
+            FMC_OBCTL0 = reg0;
+            FMC_OBCTL1 = reg1;
+        
+            retval = SUCCESS;
+        } else {
+            retval = ERROR;
+        }
+    }
+    return retval;
+}
+__________________________________________________________________________________________________________________________
+
+
+______________________CAN________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_can.c
+
+fix reason: 
+1.Determine whether the CAN controller is transmitting with three mailboxes simultaneously, and whether the mailbox to be aborted is the last one in the queue.
+If this operation is performed, the code will exit and notify the customer that the abort has failed.
+2.Fix word spelling errors
+
+V3.3.2:
+1.
+void can_transmission_stop(uint32_t can_periph, uint8_t mailbox_number)
+{
+    if(CAN_MAILBOX0 == mailbox_number) {
+        CAN_TSTAT(can_periph) |= CAN_TSTAT_MST0;
+        while(CAN_TSTAT_MST0 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST0)) {
+        }
+    } else if(CAN_MAILBOX1 == mailbox_number) {
+        CAN_TSTAT(can_periph) |= CAN_TSTAT_MST1;
+        while(CAN_TSTAT_MST1 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST1)) {
+        }
+    } else if(CAN_MAILBOX2 == mailbox_number) {
+        CAN_TSTAT(can_periph) |= CAN_TSTAT_MST2;
+        while(CAN_TSTAT_MST2 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST2)) {
+        }
+    } else {
+        /* illegal parameters */
+    }
+}
+
+2.
+/*!
+    \brief      get CAN error type
+    \param[in]  can_periph
+      \arg        CANx(x=0,1)
+    \param[out] none
+    \retval     can_error_enum
+      \arg        CAN_ERROR_NONE: no error
+      \arg        CAN_ERROR_FILL: fill error
+      \arg        CAN_ERROR_FORMATE: format error
+      \arg        CAN_ERROR_ACK: ACK error
+      \arg        CAN_ERROR_BITRECESSIVE: bit recessive
+      \arg        CAN_ERROR_BITDOMINANTER: bit dominant error
+      \arg        CAN_ERROR_CRC: CRC error
+      \arg        CAN_ERROR_SOFTWARECFG: software configure
+*/
+
+3.
+            ((can_trasnmit_message_struct *)p_struct)->tx_data[i] = 0U;
+        }
+
+        ((can_trasnmit_message_struct *)p_struct)->tx_dlen = 0u;
+        ((can_trasnmit_message_struct *)p_struct)->tx_efid = 0U;
+        ((can_trasnmit_message_struct *)p_struct)->tx_ff = (uint8_t)CAN_FF_STANDARD;
+        ((can_trasnmit_message_struct *)p_struct)->tx_ft = (uint8_t)CAN_FT_DATA;
+        ((can_trasnmit_message_struct *)p_struct)->tx_sfid = 0U;
+
+V3.3.3:
+1.
+ErrStatus can_transmission_stop(uint32_t can_periph, uint8_t mailbox_number)
+{
+    ErrStatus reval = SUCCESS;
+    /* timeout for CAN_TSTAT_MSTx bits */
+    uint32_t timeout = CAN_TIMEOUT;
+    uint32_t reg_value0 = 0U;
+    uint32_t reg_value1 = 0U;
+
+    /* get the status of transmit FIFO order */
+    reg_value0 = CAN_CTL(can_periph) & CAN_CTL_TFO;
+
+    if(CAN_MAILBOX0 == mailbox_number) {
+        reg_value1 = CAN_TSTAT(can_periph) & (CAN_TSTAT_TMLS0 | CAN_ALL_MAILBOX_EMPTY);
+        if((CAN_CTL_TFO == reg_value0) && (CAN_TSTAT_TMLS0 == reg_value1)){
+            reval = ERROR;
+        } else {
+            CAN_TSTAT(can_periph) |= CAN_TSTAT_MST0;
+            while((CAN_TSTAT_MST0 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST0)) && (0U != timeout)) {
+                timeout--;
+            }
+            if(CAN_TSTAT_MST0 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST0)){
+                reval = ERROR;
+            }
+        }
+    } else if(CAN_MAILBOX1 == mailbox_number) {
+        reg_value1 = CAN_TSTAT(can_periph) & (CAN_TSTAT_TMLS1 | CAN_ALL_MAILBOX_EMPTY);
+        if((CAN_CTL_TFO == reg_value0) && (CAN_TSTAT_TMLS1 == reg_value1)){
+            reval = ERROR;
+        }else{
+            CAN_TSTAT(can_periph) |= CAN_TSTAT_MST1;
+            while((CAN_TSTAT_MST1 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST1)) && (0U != timeout)) {
+                timeout--;
+            }
+            if(CAN_TSTAT_MST1 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST1)){
+                reval = ERROR;
+            }
+        }
+        
+    } else if(CAN_MAILBOX2 == mailbox_number) {
+        reg_value1 = CAN_TSTAT(can_periph) & (CAN_TSTAT_TMLS2 | CAN_ALL_MAILBOX_EMPTY);
+        if((CAN_CTL_TFO == reg_value0) && (CAN_TSTAT_TMLS2 == reg_value1)){
+            reval = ERROR;
+        }else{
+            CAN_TSTAT(can_periph) |= CAN_TSTAT_MST2;
+            while((CAN_TSTAT_MST2 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST2)) && (0U != timeout)) {
+                timeout--;
+            }
+            if(CAN_TSTAT_MST2 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST2)){
+                reval = ERROR;
+            }
+        }
+    } else {
+        /* illegal parameters */
+    }
+    return reval;
+}
+2.
+/*!
+    \brief      get CAN error type
+    \param[in]  can_periph
+      \arg        CANx(x=0,1)
+    \param[out] none
+    \retval     can_error_enum
+      \arg        CAN_ERROR_NONE: no error
+      \arg        CAN_ERROR_FILL: fill error
+      \arg        CAN_ERROR_FORMAT: format error
+      \arg        CAN_ERROR_ACK: ACK error
+      \arg        CAN_ERROR_BITRECESSIVE: bit recessive
+      \arg        CAN_ERROR_BITDOMINANT: bit dominant error
+      \arg        CAN_ERROR_CRC: CRC error
+      \arg        CAN_ERROR_SOFTWARECFG: software configure
+*/
+
+3.
+            ((can_transmit_message_struct *)p_struct)->tx_data[i] = 0U;
+        }
+
+        ((can_transmit_message_struct *)p_struct)->tx_dlen = 0u;
+        ((can_transmit_message_struct *)p_struct)->tx_efid = 0U;
+        ((can_transmit_message_struct *)p_struct)->tx_ff = (uint8_t)CAN_FF_STANDARD;
+        ((can_transmit_message_struct *)p_struct)->tx_ft = (uint8_t)CAN_FT_DATA;
+        ((can_transmit_message_struct *)p_struct)->tx_sfid = 0U;
+
+
+Firmware/GD32F4xx_standard_peripheral/Include/gd32f4xx_can.h	Modified (content only)
+fix reason: 
+1.Determine whether the CAN controller is transmitting with three mailboxes simultaneously, and whether the mailbox to be aborted is the last one in the queue.
+If this operation is performed, the code will exit and notify the customer that the abort has failed.
+2.Fix word spelling errors
+
+V3.3.2:
+1.
+/* CAN errors */
+typedef enum {
+    CAN_ERROR_NONE = 0,                                                 /*!< no error */
+    CAN_ERROR_FILL,                                                     /*!< fill error */
+    CAN_ERROR_FORMATE,                                                  /*!< format error */
+    CAN_ERROR_ACK,                                                      /*!< ACK error */
+    CAN_ERROR_BITRECESSIVE,                                             /*!< bit recessive error */
+    CAN_ERROR_BITDOMINANTER,                                            /*!< bit dominant error */
+    CAN_ERROR_CRC,                                                      /*!< CRC error */
+    CAN_ERROR_SOFTWARECFG,                                              /*!< software configure */
+} can_error_enum;
+2.
+/* CAN transmit message structure */
+typedef struct {
+    uint32_t tx_sfid;                                                   /*!< standard format frame identifier */
+    uint32_t tx_efid;                                                   /*!< extended format frame identifier */
+    uint8_t tx_ff;                                                      /*!< format of frame, standard or extended format */
+    uint8_t tx_ft;                                                      /*!< type of frame, data or remote */
+    uint8_t tx_dlen;                                                    /*!< data length */
+    uint8_t tx_data[8];                                                 /*!< transmit data */
+} can_trasnmit_message_struct;
+3.
+uint8_t can_message_transmit(uint32_t can_periph, can_trasnmit_message_struct *transmit_message);
+
+V3.3.3:
+1.
+/* CAN errors */
+typedef enum {
+    CAN_ERROR_NONE = 0,                                                 /*!< no error */
+    CAN_ERROR_FILL,                                                     /*!< fill error */
+    CAN_ERROR_FORMAT,                                                   /*!< format error */
+    CAN_ERROR_ACK,                                                      /*!< ACK error */
+    CAN_ERROR_BITRECESSIVE,                                             /*!< bit recessive error */
+    CAN_ERROR_BITDOMINANT,                                              /*!< bit dominant error */
+    CAN_ERROR_CRC,                                                      /*!< CRC error */
+    CAN_ERROR_SOFTWARECFG,                                              /*!< software configure */
+} can_error_enum;
+
+2.
+/* CAN transmit message structure */
+typedef struct {
+    uint32_t tx_sfid;                                                   /*!< standard format frame identifier */
+    uint32_t tx_efid;                                                   /*!< extended format frame identifier */
+    uint8_t tx_ff;                                                      /*!< format of frame, standard or extended format */
+    uint8_t tx_ft;                                                      /*!< type of frame, data or remote */
+    uint8_t tx_dlen;                                                    /*!< data length */
+    uint8_t tx_data[8];                                                 /*!< transmit data */
+} can_transmit_message_struct;
+
+3.
+uint8_t can_message_transmit(uint32_t can_periph, can_transmit_message_struct *transmit_message);
+__________________________________________________________________________________________________________________________
+
+______________________RCU________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/CMSIS/GD/GD32F4xx/Source/system_gd32f4xx.c
+
+fix reason: 
+Add interrupt vector migration in SystemInit()
+
+V3.3.2:
+none
+
+V3.3.3:
+line 4 #define VECT_TAB_OFFSET  (uint32_t)0x00             /* vector table base offset */
+
+line 221-226 
+#ifdef VECT_TAB_SRAM
+    nvic_vector_table_set(NVIC_VECTTAB_RAM, VECT_TAB_OFFSET);
+#else
+    nvic_vector_table_set(NVIC_VECTTAB_FLASH, VECT_TAB_OFFSET);
+#endif
+__________________________________________________________________________________________________________________________
+
+______________________ENET________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/ENET/Telnet
+
+fix reason: 
+Upgrade lwIP version to 2.2.1
+
+V3.3.2:
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/ENET/Telnet/lwip-2.2.0
+
+V3.3.3:
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/ENET/Telnet/lwip-2.2.1
+
+__________________________________________________________________________________________________________________________
+
+______________________WDGT________________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_fwdgt.c
+
+fix reason: 
+Fix the order of PUR and PDR
+
+V3.3.2:
+ErrStatus fwdgt_prescaler_value_config(uint16_t prescaler_value)
+{
+    uint32_t timeout = FWDGT_PSC_TIMEOUT;
+    uint32_t flag_status = RESET;
+  
+    /* enable write access to FWDGT_PSC */
+    FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
+  
+    /* wait until the PUD flag to be reset */
+    do{
+        flag_status = FWDGT_STAT & FWDGT_STAT_PUD;
+    }while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+    
+    if ((uint32_t)RESET != flag_status){
+        return ERROR;
+    }
+    
+    /* configure FWDGT */
+    FWDGT_PSC = (uint32_t)prescaler_value; 
+
+    return SUCCESS;
+}
+
+ErrStatus fwdgt_reload_value_config(uint16_t reload_value)
+{
+    uint32_t timeout = FWDGT_RLD_TIMEOUT;
+    uint32_t flag_status = RESET;
+  
+    /* enable write access to FWDGT_RLD */
+    FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
+  
+    /* wait until the RUD flag to be reset */
+    do{
+        flag_status = FWDGT_STAT & FWDGT_STAT_RUD;
+    }while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+   
+    if ((uint32_t)RESET != flag_status){
+        return ERROR;
+    }
+    
+    FWDGT_RLD = RLD_RLD(reload_value);
+
+    return SUCCESS;
+}
+
+ErrStatus fwdgt_config(uint16_t reload_value, uint8_t prescaler_div)
+{
+    uint32_t timeout = FWDGT_PSC_TIMEOUT;
+    uint32_t flag_status = RESET;
+  
+    /* enable write access to FWDGT_PSC,and FWDGT_RLD */
+    FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
+  
+    /* wait until the PUD flag to be reset */
+    do{
+       flag_status = FWDGT_STAT & FWDGT_STAT_PUD;
+    }while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+    
+    if ((uint32_t)RESET != flag_status){
+        return ERROR;
+    }
+
+    /* configure FWDGT */
+    FWDGT_PSC = (uint32_t)prescaler_div;
+
+    timeout = FWDGT_RLD_TIMEOUT;
+    /* wait until the RUD flag to be reset */
+    do{
+       flag_status = FWDGT_STAT & FWDGT_STAT_RUD;
+    }while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+   
+    if ((uint32_t)RESET != flag_status){
+        return ERROR;
+    }
+    
+    FWDGT_RLD = RLD_RLD(reload_value);
+    
+    /* reload the counter */
+    FWDGT_CTL = FWDGT_KEY_RELOAD;
+
+    return SUCCESS;
+}
+
+V3.3.3:
+ErrStatus fwdgt_prescaler_value_config(uint16_t prescaler_value)
+{
+    uint32_t timeout = FWDGT_PSC_TIMEOUT;
+    uint32_t flag_status;
+    ErrStatus status = SUCCESS;
+
+    /* enable write access to FWDGT_PSC */
+    FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
+
+    /* configure FWDGT_PSC */
+    FWDGT_PSC = (uint32_t)prescaler_value;
+
+    /* wait until the PUD flag to be reset */
+    do {
+        flag_status = FWDGT_STAT & FWDGT_STAT_PUD;
+    } while((--timeout > 0U) && (0U != flag_status));
+
+    if(0U != flag_status) {
+        status = ERROR;
+    }
+
+    return status;
+}
+
+ErrStatus fwdgt_reload_value_config(uint16_t reload_value)
+{
+    uint32_t timeout = FWDGT_RLD_TIMEOUT;
+    uint32_t flag_status;
+    ErrStatus status = SUCCESS;
+
+    /* enable write access to FWDGT_RLD */
+    FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
+
+    /* configure FWDGT_RLD */
+    FWDGT_RLD = RLD_RLD(reload_value);
+
+    /* wait until the RUD flag to be reset */
+    do {
+        flag_status = FWDGT_STAT & FWDGT_STAT_RUD;
+    } while((--timeout > 0U) && (0U != flag_status));
+
+    if(0U != flag_status) {
+        status = ERROR;
+    }
+
+    return status;
+}
+
+ErrStatus fwdgt_config(uint16_t reload_value, uint8_t prescaler_value)
+{
+    uint32_t timeout = FWDGT_PSC_TIMEOUT;
+    uint32_t flag_status;
+    ErrStatus status = SUCCESS;
+
+    /* start the free watchdog timer counter */
+    FWDGT_CTL = FWDGT_KEY_ENABLE;
+
+    /* enable write access to FWDGT_PSC,and FWDGT_RLD */
+    FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
+
+    /* configure FWDGT_PSC */
+    FWDGT_PSC = (uint32_t)prescaler_value;
+
+    do {
+        flag_status = FWDGT_STAT & FWDGT_STAT_PUD;
+    } while((--timeout > 0U) && (0U != flag_status));
+
+    if(0U != flag_status) {
+        status = ERROR;
+    }
+
+    if(SUCCESS == status) {
+        /* configure FWDGT_RLD */
+        FWDGT_RLD = RLD_RLD(reload_value);
+
+        /* wait until the RUD flag to be reset */
+        timeout = FWDGT_RLD_TIMEOUT;
+        do {
+            flag_status = FWDGT_STAT & FWDGT_STAT_RUD;
+        } while((--timeout > 0U) && (0U != flag_status));
+
+        if(0U != flag_status) {
+            status = ERROR;
+        }
+    }
+    if(SUCCESS == status) {
+        /* reload the counter */
+        FWDGT_CTL = FWDGT_KEY_RELOAD;
+    }
+
+    return status;
+}
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_wwdgt.c
+
+fix reason: 
+Fix Misra-c 2004 14.7 warning
+
+V3.3.2:
+/*!
+    \brief    check early wakeup interrupt state of WWDGT
+    \param[in]  none
+    \param[out] none
+    \retval     FlagStatus: SET or RESET
+*/
+FlagStatus wwdgt_flag_get(void)
+{
+    if(RESET != (WWDGT_STAT & WWDGT_STAT_EWIF)){
+        return SET;
+    }
+
+    return RESET;
+}
+V3.3.3:
+/*!
+    \brief    check early wakeup interrupt state of WWDGT
+    \param[in]  none
+    \param[out] none
+    \retval     FlagStatus: SET or RESET
+*/
+FlagStatus wwdgt_flag_get(void)
+{
+    FlagStatus flag_status = RESET;
+    if(RESET != (WWDGT_STAT & WWDGT_STAT_EWIF)) {
+        flag_status = SET;
+    }
+    return flag_status;
+}
+__________________________________________________________________________________________________________________________
+
+________________________Module PMU _______________________________________________________________________________________
+../GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/PMU/Deepsleep_wakeup_RTC/main.c
+../GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/PMU/Deepsleep_wakeup_exti/main.c
+../GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/PMU/Low_voltage_detector/main.c
+../GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/PMU/Standby_wakeup_RTC/main.c
+../GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/PMU/Standby_wakeup_pin/main.c
+
+fix reason: 
+add switch frequence code to prevent vcore fluctuations
+
+V3.3.2:
+none
+
+V3.3.3:
+/* software delay to prevent the impact of Vcore fluctuations.
+   It is strongly recommended to include it to avoid issues caused by self-removal. */
+static void _soft_delay_(uint32_t time)
+{
+    __IO uint32_t i;
+    for(i=0; i<time*10; i++){
+    }
+}
+
+        /* The following is to prevent Vcore fluctuations caused by frequency switching. 
+           It is strongly recommended to include it to avoid issues caused by self-removal. */
+        rcu_ahb_clock_config(RCU_AHB_CKSYS_DIV2);
+        _soft_delay_(0x50);
+        rcu_ahb_clock_config(RCU_AHB_CKSYS_DIV4);
+        _soft_delay_(0x50);
+        rcu_ahb_clock_config(RCU_AHB_CKSYS_DIV8);
+        _soft_delay_(0x50);
+        rcu_ahb_clock_config(RCU_AHB_CKSYS_DIV16);
+        _soft_delay_(0x50);
+        rcu_system_clock_source_config(RCU_CKSYSSRC_IRC16M);
+        _soft_delay_(200);
+        rcu_ahb_clock_config(RCU_AHB_CKSYS_DIV1);
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/PMU/Low_voltage_detector/main.c
+
+fix reason:
+clear build warning problem
+V3.3.2:
+/* software delay to prevent the impact of Vcore fluctuations.
+   It is strongly recommended to include it to avoid issues caused by self-removal. */
+static void _soft_delay_(uint32_t time)
+{
+    __IO uint32_t i;
+    for(i=0; i<time*10; i++){
+    }
+}
+
+V3.3.3:
+none
+__________________________________________________________________________________________________________________________
+
+______________________SPI_____________________________________________________________________________________________
+../GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Include/gd32f4xx_spi.h
+
+fix reason: 
+delete spi_quad_io23_output_disable function
+
+V3.3.2:
+#define SPI_QCTL_IO23_DRV               BIT(2)                                  /*!< drive SPI_IO2 and SPI_IO3 enable */
+
+V3.3.3:
+none
+
+../GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_spi.c
+
+fix reason: 
+delete spi_quad_io23_output_disable function
+
+V3.3.2:
+/*!
+    \brief      enable SPI_IO2 and SPI_IO3 pin output
+    \param[in]  spi_periph: SPIx(only x=5)
+    \param[out] none
+    \retval     none
+*/
+void spi_quad_io23_output_enable(uint32_t spi_periph)
+{
+    SPI_QCTL(spi_periph) |= (uint32_t)SPI_QCTL_IO23_DRV;
+}
+
+/*!
+   \brief      disable SPI_IO2 and SPI_IO3 pin output
+   \param[in]  spi_periph: SPIx(only x=5)
+   \param[out] none
+   \retval     none
+*/
+void spi_quad_io23_output_disable(uint32_t spi_periph)
+{
+    SPI_QCTL(spi_periph) &= (uint32_t)(~SPI_QCTL_IO23_DRV);
+}
+
+V3.3.3:
+none
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/SPI/I2S_master_slave_fullduplex_dma/main.c
+
+fix reason: Correct spelling errors PHILLIPS-->PHILIPS
+
+V3.3.2:
+    /* configure I2S1 and I2S1_ADD */
+    i2s_init(SPI1, I2S_MODE_MASTERTX, I2S_STD_PHILLIPS, I2S_CKPL_LOW);
+    i2s_psc_config(SPI1, I2S_AUDIOSAMPLE_11K, I2S_FRAMEFORMAT_DT16B_CH16B, I2S_MCKOUT_DISABLE);
+    i2s_full_duplex_mode_config(I2S1_ADD, I2S_MODE_MASTERTX, I2S_STD_PHILLIPS, I2S_CKPL_LOW, I2S_FRAMEFORMAT_DT16B_CH16B);
+
+    /* configure I2S2 and I2S2_ADD */
+    i2s_init(SPI2, I2S_MODE_SLAVERX, I2S_STD_PHILLIPS, I2S_CKPL_LOW);
+    i2s_psc_config(SPI2, I2S_AUDIOSAMPLE_11K, I2S_FRAMEFORMAT_DT16B_CH16B, I2S_MCKOUT_DISABLE);
+    i2s_full_duplex_mode_config(I2S2_ADD, I2S_MODE_SLAVERX, I2S_STD_PHILLIPS, I2S_CKPL_LOW, I2S_FRAMEFORMAT_DT16B_CH16B);
+
+
+V3.3.3:
+
+    /* configure I2S1 and I2S1_ADD */
+    i2s_init(SPI1, I2S_MODE_MASTERTX, I2S_STD_PHILIPS, I2S_CKPL_LOW);
+    i2s_psc_config(SPI1, I2S_AUDIOSAMPLE_11K, I2S_FRAMEFORMAT_DT16B_CH16B, I2S_MCKOUT_DISABLE);
+    i2s_full_duplex_mode_config(I2S1_ADD, I2S_MODE_MASTERTX, I2S_STD_PHILIPS, I2S_CKPL_LOW, I2S_FRAMEFORMAT_DT16B_CH16B);
+
+    /* configure I2S2 and I2S2_ADD */
+    i2s_init(SPI2, I2S_MODE_SLAVERX, I2S_STD_PHILIPS, I2S_CKPL_LOW);
+    i2s_psc_config(SPI2, I2S_AUDIOSAMPLE_11K, I2S_FRAMEFORMAT_DT16B_CH16B, I2S_MCKOUT_DISABLE);
+    i2s_full_duplex_mode_config(I2S2_ADD, I2S_MODE_SLAVERX, I2S_STD_PHILIPS, I2S_CKPL_LOW, I2S_FRAMEFORMAT_DT16B_CH16B);
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Include/gd32f4xx_spi.h
+
+fix reason:Correct spelling errors PHILLIPS-->PHILIPS
+
+V3.3.2:
+#define I2S_STD_PHILLIPS                I2SCTL_I2SSTD(0)                        /*!< I2S phillips standard */
+
+V3.3.3:
+#define I2S_STD_PHILIPS                 I2SCTL_I2SSTD(0)                        /*!< I2S philips standard */
+
+__________________________________________________________________________________________________________________________
+
+
+________________________Module USART _______________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/IDLE_receive_interrupt/main.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/Receivertimeout/gd32f4xx_it.c
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USART/Receivertimeout/main.c
+
+fix reason:clear IAR compile wrning
+
+V3.3.2:
+__IO
+
+V3.3.3:
+none
+
+__________________________________________________________________________________________________________________________
+
+________________________Module CAN _______________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Include/gd32f4xx_can.h
+
+fix reason:
+Modification of CAN Filter Register Base Address (CAN filter 23 data 0 register / CAN filter 17 data 1 register)
+
+V3.3.2:
+#define CAN_F23DATA0(canx)                 REG32((canx) + 0x000003F8U)        /*!< CAN filter 23 data 0 register */
+....
+#define CAN_F17DATA1(canx)                 REG32((canx) + 0x0000024CU)        /*!< CAN filter 17 data 1 register */
+
+V3.3.3:
+#define CAN_F23DATA0(canx)                 REG32((canx) + 0x000002F8U)        /*!< CAN filter 23 data 0 register */
+...
+#define CAN_F17DATA1(canx)                 REG32((canx) + 0x000002CCU)        /*!< CAN filter 17 data 1 register */
+__________________________________________________________________________________________________________________________
+
+________________________Module EXTI _______________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_misc.c
+
+fix reason: 
+modify function nvic_irq_enable implementation
+
+V3.3.2:
+void nvic_irq_enable(IRQn_Type nvic_irq, uint8_t nvic_irq_pre_priority,
+                     uint8_t nvic_irq_sub_priority)
+{
+    uint32_t temp_priority = 0x00U, temp_pre = 0x00U, temp_sub = 0x00U;
+    /* use the priority group value to get the temp_pre and the temp_sub */
+    if(((SCB->AIRCR) & (uint32_t)0x700U) == NVIC_PRIGROUP_PRE0_SUB4) {
+        temp_pre = 0U;
+        temp_sub = 0x4U;
+    } else if(((SCB->AIRCR) & (uint32_t)0x700U) == NVIC_PRIGROUP_PRE1_SUB3) {
+        temp_pre = 1U;
+        temp_sub = 0x3U;
+    } else if(((SCB->AIRCR) & (uint32_t)0x700U) == NVIC_PRIGROUP_PRE2_SUB2) {
+        temp_pre = 2U;
+        temp_sub = 0x2U;
+    } else if(((SCB->AIRCR) & (uint32_t)0x700U) == NVIC_PRIGROUP_PRE3_SUB1) {
+        temp_pre = 3U;
+        temp_sub = 0x1U;
+    } else if(((SCB->AIRCR) & (uint32_t)0x700U) == NVIC_PRIGROUP_PRE4_SUB0) {
+        temp_pre = 4U;
+        temp_sub = 0x0U;
+    } else {
+        nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
+        temp_pre = 2U;
+        temp_sub = 0x2U;
+    }
+    /* get the temp_priority to fill the NVIC->IP register */
+    temp_priority = (uint32_t)nvic_irq_pre_priority << (0x4U - temp_pre);
+    temp_priority |= nvic_irq_sub_priority & (0x0FU >> (0x4U - temp_sub));
+    temp_priority = temp_priority << 0x04U;
+    NVIC->IP[nvic_irq] = (uint8_t)temp_priority;
+    /* enable the selected IRQ */
+    NVIC->ISER[nvic_irq >> 0x05U] = (uint32_t)0x01U << (nvic_irq & (uint8_t)0x1FU);
+}
+
+V3.3.3:
+
+void nvic_irq_enable(IRQn_Type nvic_irq, uint8_t nvic_irq_pre_priority,
+                     uint8_t nvic_irq_sub_priority)
+{
+    uint32_t nvic_prigroup, nvic_priority;
+
+    /* check current priority group */
+    switch(SCB->AIRCR & SCB_AIRCR_PRIGROUP_Msk) {
+    case NVIC_PRIGROUP_PRE0_SUB4:
+    case NVIC_PRIGROUP_PRE1_SUB3:
+    case NVIC_PRIGROUP_PRE2_SUB2:
+    case NVIC_PRIGROUP_PRE3_SUB1:
+    case NVIC_PRIGROUP_PRE4_SUB0:
+        break;
+    default:
+        nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
+        break;
+    }
+
+    /* get the priority group value */
+    nvic_prigroup = NVIC_GetPriorityGrouping();
+
+    /* encoding the pre-emption, subpriority priority */
+    nvic_priority = NVIC_EncodePriority(nvic_prigroup, (uint32_t)nvic_irq_pre_priority, (uint32_t)nvic_irq_sub_priority);
+    /* set priority */
+    NVIC_SetPriority(nvic_irq, nvic_priority);
+
+    /* enable the selected IRQ */
+    NVIC_EnableIRQ(nvic_irq);
+}
+__________________________________________________________________________________________________________________________
+
+________________________Module USB _______________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Examples/USB/USB_Device/dev_firmware_update/src/gd25qxx.c
+
+fix reason:
+Remove functions related to the driving functionality of IO2/IO3 pins
+
+V3.3.2:
+    /* quad wire SPI_IO2 and SPI_IO3 pin output enable */
+    spi_quad_io23_output_enable(SPI5);
+
+V3.3.3:
+none
+__________________________________________________________________________________________________________________________
+______________________Common______________________________________________________________________________________________
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Utilities/Third_Party/fat_fs
+
+fix reason:
+FS unified to version r0.13c
+
+V3.3.2:
+fattime.h
+nteger.h
+readme.txt
+option
+
+V3.3.3:
+ delete files ( fattime.h, nteger.h, readme.txt, option)
+add file (diskio.c)
+
+/GD32F4xx_Firmware_Library/GD32F4xx_Firmware_Library/Utilities/Third_Party/fat_fs/src/fattime.c
+
+fix reason:
+FS unified to version r0.13c
+
+V3.3.2:
+#include "integer.h"
+#include "fattime.h"
+
+V3.3.3:
+#include "ff.h"
+#include "diskio.h"
+
+_______________________________________________________________________________________________________________________
+
+******************* V3.3.2 2025-08-08 ******************************************************************************************
+______________________Common______________________________________________________________________________________________
+
+_______________________________________________________________________________________________________________________
+
+________________________Module ADC _______________________________________________________________________________________
+
+__________________________________________________________________________________________________________________________
+
+______________________ADTIMER_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________BKP_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________BL0TIMER____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________BL1TIMER____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CAN_________________________________________________________________________________________________
+../Firmware/GD32F4xx_standard_peripheral/Source/gd32f4xx_can.c
+fix reason:
+When the number of bytes sent by CAN exceeds 8, the frame sent by CAN to the bus will have a problem.
+
+V3.3.1:
+uint8_t can_message_transmit(uint32_t can_periph, can_trasnmit_message_struct *transmit_message)
+{
+    uint8_t mailbox_number = CAN_MAILBOX0;
+
+    /* select one empty mailbox */
+    if(CAN_TSTAT_TME0 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME0)) {
+        mailbox_number = CAN_MAILBOX0;
+    } else if(CAN_TSTAT_TME1 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME1)) {
+        mailbox_number = CAN_MAILBOX1;
+    } else if(CAN_TSTAT_TME2 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME2)) {
+        mailbox_number = CAN_MAILBOX2;
+    } else {
+        mailbox_number = CAN_NOMAILBOX;
+    }
+    /* return no mailbox empty */
+    if(CAN_NOMAILBOX == mailbox_number) {
+        return CAN_NOMAILBOX;
+    }
+
+    CAN_TMI(can_periph, mailbox_number) &= CAN_TMI_TEN;
+    if(CAN_FF_STANDARD == transmit_message->tx_ff) {
+        /* set transmit mailbox standard identifier */
+        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_SFID(transmit_message->tx_sfid) | \
+                                               transmit_message->tx_ft);
+    } else {
+        /* set transmit mailbox extended identifier */
+        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_EFID(transmit_message->tx_efid) | \
+                                               transmit_message->tx_ff | \
+                                               transmit_message->tx_ft);
+    }
+    /* set the data length */
+    CAN_TMP(can_periph, mailbox_number) &= ~CAN_TMP_DLENC;
+    CAN_TMP(can_periph, mailbox_number) |= transmit_message->tx_dlen;
+    /* set the data */
+    CAN_TMDATA0(can_periph, mailbox_number) = TMDATA0_DB3(transmit_message->tx_data[3]) | \
+            TMDATA0_DB2(transmit_message->tx_data[2]) | \
+            TMDATA0_DB1(transmit_message->tx_data[1]) | \
+            TMDATA0_DB0(transmit_message->tx_data[0]);
+    CAN_TMDATA1(can_periph, mailbox_number) = TMDATA1_DB7(transmit_message->tx_data[7]) | \
+            TMDATA1_DB6(transmit_message->tx_data[6]) | \
+            TMDATA1_DB5(transmit_message->tx_data[5]) | \
+            TMDATA1_DB4(transmit_message->tx_data[4]);
+    /* enable transmission */
+    CAN_TMI(can_periph, mailbox_number) |= CAN_TMI_TEN;
+
+    return mailbox_number;
+}
+
+V3.3.2:
+uint8_t can_message_transmit(uint32_t can_periph, can_trasnmit_message_struct *transmit_message)
+{
+    uint8_t mailbox_number = CAN_MAILBOX0;
+
+    /* select one empty mailbox */
+    if(CAN_TSTAT_TME0 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME0)) {
+        mailbox_number = CAN_MAILBOX0;
+    } else if(CAN_TSTAT_TME1 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME1)) {
+        mailbox_number = CAN_MAILBOX1;
+    } else if(CAN_TSTAT_TME2 == (CAN_TSTAT(can_periph)&CAN_TSTAT_TME2)) {
+        mailbox_number = CAN_MAILBOX2;
+    } else {
+        mailbox_number = CAN_NOMAILBOX;
+    }
+    /* return no mailbox empty */
+    if(CAN_NOMAILBOX == mailbox_number) {
+        return CAN_NOMAILBOX;
+    }
+
+    CAN_TMI(can_periph, mailbox_number) &= CAN_TMI_TEN;
+    if(CAN_FF_STANDARD == transmit_message->tx_ff) {
+        /* set transmit mailbox standard identifier */
+        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_SFID(transmit_message->tx_sfid) | \
+                                               transmit_message->tx_ft);
+    } else {
+        /* set transmit mailbox extended identifier */
+        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_EFID(transmit_message->tx_efid) | \
+                                               transmit_message->tx_ff | \
+                                               transmit_message->tx_ft);
+    }
+    /* set the data length */
+    CAN_TMP(can_periph, mailbox_number) &= ~CAN_TMP_DLENC;
+    
+    /* Classic CAN frame data lenth does not exceed 8 */
+    if (transmit_message->tx_dlen > 8U) {
+        transmit_message->tx_dlen = 8U;
+    }
+    
+    CAN_TMP(can_periph, mailbox_number) |= transmit_message->tx_dlen;
+    /* set the data */
+    CAN_TMDATA0(can_periph, mailbox_number) = TMDATA0_DB3(transmit_message->tx_data[3]) | \
+            TMDATA0_DB2(transmit_message->tx_data[2]) | \
+            TMDATA0_DB1(transmit_message->tx_data[1]) | \
+            TMDATA0_DB0(transmit_message->tx_data[0]);
+    CAN_TMDATA1(can_periph, mailbox_number) = TMDATA1_DB7(transmit_message->tx_data[7]) | \
+            TMDATA1_DB6(transmit_message->tx_data[6]) | \
+            TMDATA1_DB5(transmit_message->tx_data[5]) | \
+            TMDATA1_DB4(transmit_message->tx_data[4]);
+    /* enable transmission */
+    CAN_TMI(can_periph, mailbox_number) |= CAN_TMI_TEN;
+
+    return mailbox_number;
+}
+__________________________________________________________________________________________________________________________
+
+______________________CAU_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CEC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CFMU________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CLA_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CLTCFG______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CMP_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CPDM________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CRC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________CTC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________DAC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________DBG_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________DBGSYS______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________DCI_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________DCM_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________DMA_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________DMAMUX______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________EDOUT_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________EFUSE_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________ENET________________________________________________________________________________________________
+
+_____________________________________________________________________________________________________________________
+
+______________________EVIC________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________EXMC________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________EXTI________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________FAC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________FFT_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________FMC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________FMU_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________GPIO________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________GPTIMER_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________GTOC________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________GTOC________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________GPTIMER_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________GTOC________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HPDF________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_CAU_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_DMA_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_HAU_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_IF______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_PKCAU___________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_RCU_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_SM2_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_SM3_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_SM4_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_Timer___________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_TRNG____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HSM_WDGT____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________HWSEM_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________I2C_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________ICACHE______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________IFRP________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________IOC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________IPA_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________IREF________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________IRM_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________IVREF_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________LIN_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________LPDTS_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________LPTIMER_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________LPUSART_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________MCMU________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________MDIO________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________MDMA________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________MFCOM_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________MTC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________OPA_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________OSPI________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________OSPIM_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________PKCAU_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________PMU_________________________________________________________________________________________________
+../Firmware/GD32f4xx_standard_peripheral/Source/gd32f4xx_pmu.c
+fix reason:
+Modifying the pmu_to_sleepmode() function to enter sleep with WFE requires one SEV instruction and two WFE instructions
+V3.3.1:
+void pmu_to_sleepmode(uint8_t sleepmodecmd)
+{
+    /* clear sleepdeep bit of Cortex-M4 system control register */
+    SCB->SCR &= ~((uint32_t)SCB_SCR_SLEEPDEEP_Msk);
+
+    /* select WFI or WFE command to enter sleep mode */
+    if(WFI_CMD == sleepmodecmd) {
+        __WFI();
+    } else {
+        __WFE();
+    }
+V3.3.2:
+void pmu_to_sleepmode(uint8_t sleepmodecmd)
+{
+    /* clear sleepdeep bit of Cortex-M4 system control register */
+    SCB->SCR &= ~((uint32_t)SCB_SCR_SLEEPDEEP_Msk);
+
+    /* select WFI or WFE command to enter sleep mode */
+    if(WFI_CMD == sleepmodecmd) {
+        __WFI();
+    } else {
+        __SEV();
+        __WFE();
+        __WFE();
+    }
+}
+__________________________________________________________________________________________________________________________
+
+______________________POC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________QSPI________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________RAMECCMU____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________RCU_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________RSPDIF______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________RTC_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________RTDEC_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SAI_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SDIO________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SENT________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SHRTIMER____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SLCD________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SPI_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SQPI________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________STCM________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SVPWM_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________SYSTEM______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________TIMER_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________TLI_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________TMU_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________TRIGSEL_____________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________TRNG________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________TSI_________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________TZPCU_______________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________USART_______________________________________________________________________________________________
+
+_______________________________________________________________________________________________________________________
+
+______________________USBD________________________________________________________________________________________________
+../Firmware/GD32f4xx_usb_library/device/core/Source/usbd_core.c
+../Firmware/GD32f4xx_usb_library/device/core/Source/usbd_enum.c
+fix reason:
+CVTest testing through self-powered supply.
+V3.3.1:
+1.
+static usb_reqsta _usb_std_getstatus(usb_core_driver *udev, usb_req *req)
+{
+    uint8_t recp = BYTE_LOW(req->wIndex);
+    usb_reqsta req_status = REQ_NOTSUPP;
+    usb_transc *transc = &udev->dev.transc_in[0];
+
+    static uint8_t status[2] = {0U};
+
+    switch(req->bmRequestType & (uint8_t)USB_RECPTYPE_MASK) {
+    case USB_RECPTYPE_DEV:
+        if(((uint8_t)USBD_ADDRESSED == udev->dev.cur_status) || \
+                ((uint8_t)USBD_CONFIGURED == udev->dev.cur_status)) {
+
+            if(udev->dev.pm.power_mode) {
+                status[0] = USB_STATUS_SELF_POWERED;
+            } else {
+                status[0] = 0U;
+            }
+
+            if(udev->dev.pm.dev_remote_wakeup) {
+                status[0] |= USB_STATUS_REMOTE_WAKEUP;
+            } else {
+                status[0] = 0U;
+            }
+
+            req_status = REQ_SUPP;
+        }
+        break;
+
+    case USB_RECPTYPE_ITF:
+        if(((uint8_t)USBD_CONFIGURED == udev->dev.cur_status) && (recp <= USBD_ITF_MAX_NUM)) {
+            req_status = REQ_SUPP;
+        }
+        break;
+
+    case USB_RECPTYPE_EP:
+        if((uint8_t)USBD_CONFIGURED == udev->dev.cur_status) {
+            if(0x80U == (recp & 0x80U)) {
+                status[0] = udev->dev.transc_in[EP_ID(recp)].ep_stall;
+            } else {
+                status[0] = udev->dev.transc_out[recp].ep_stall;
+            }
+
+            req_status = REQ_SUPP;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    if(REQ_SUPP == req_status) {
+        transc->xfer_buf = status;
+        transc->remain_len = 2U;
+    }
+
+    return req_status;
+}
+2.
+void usbd_init(usb_core_driver *udev, usb_core_enum core, usb_desc *desc, usb_class_core *class_core)
+{
+    udev->dev.desc = desc;
+
+    /* class callbacks */
+    udev->dev.class_core = class_core;
+
+    /* create serial string */
+    serial_string_get(udev->dev.desc->strings[STR_IDX_SERIAL]);
+
+    /* configure USB capabilities */
+    (void)usb_basic_init(&udev->bp, &udev->regs, core);
+
+    usb_globalint_disable(&udev->regs);
+
+    /* initializes the USB core*/
+    (void)usb_core_init(udev->bp, &udev->regs);
+
+    /* set device disconnect */
+    usbd_disconnect(udev);
+
+#ifndef USE_OTG_MODE
+    usb_curmode_set(&udev->regs, DEVICE_MODE);
+#endif /* USE_OTG_MODE */
+
+    /* initializes device mode */
+    (void)usb_devcore_init(udev);
+
+    usb_globalint_enable(&udev->regs);
+
+    /* set device connect */
+    usbd_connect(udev);
+
+    udev->dev.cur_status = (uint8_t)USBD_DEFAULT;
+}
+
+V3.3.2:
+1.
+static usb_reqsta _usb_std_getstatus(usb_core_driver *udev, usb_req *req)
+{
+    uint8_t recp = BYTE_LOW(req->wIndex);
+    usb_reqsta req_status = REQ_NOTSUPP;
+    usb_transc *transc = &udev->dev.transc_in[0];
+
+    static uint8_t status[2] = {0U};
+
+    switch(req->bmRequestType & (uint8_t)USB_RECPTYPE_MASK) {
+    case USB_RECPTYPE_DEV:
+        if(((uint8_t)USBD_ADDRESSED == udev->dev.cur_status) || \
+                ((uint8_t)USBD_CONFIGURED == udev->dev.cur_status)) {
+
+            if(udev->dev.pm.power_mode) {
+                status[0] = USB_STATUS_SELF_POWERED;
+            } else {
+                status[0] = 0U;
+            }
+
+            if(udev->dev.pm.dev_remote_wakeup) {
+                status[0] |= USB_STATUS_REMOTE_WAKEUP;
+            }
+
+            req_status = REQ_SUPP;
+        }
+        break;
+
+    case USB_RECPTYPE_ITF:
+        if(((uint8_t)USBD_CONFIGURED == udev->dev.cur_status) && (recp <= USBD_ITF_MAX_NUM)) {
+            req_status = REQ_SUPP;
+        }
+        break;
+
+    case USB_RECPTYPE_EP:
+        if((uint8_t)USBD_CONFIGURED == udev->dev.cur_status) {
+            if(0x80U == (recp & 0x80U)) {
+                status[0] = udev->dev.transc_in[EP_ID(recp)].ep_stall;
+            } else {
+                status[0] = udev->dev.transc_out[recp].ep_stall;
+            }
+
+            req_status = REQ_SUPP;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    if(REQ_SUPP == req_status) {
+        transc->xfer_buf = status;
+        transc->remain_len = 2U;
+    }
+
+    return req_status;
+}
+2.
+void usbd_init(usb_core_driver *udev, usb_core_enum core, usb_desc *desc, usb_class_core *class_core)
+{
+    udev->dev.desc = desc;
+
+    /* class callbacks */
+    udev->dev.class_core = class_core;
+
+    /* create serial string */
+    serial_string_get(udev->dev.desc->strings[STR_IDX_SERIAL]);
+
+     /* configure power management */
+    udev->dev.pm.power_mode = (udev->dev.desc->config_desc[7] & BIT(6)) >> 6;
+
+    /* configure USB capabilities */
+    (void)usb_basic_init(&udev->bp, &udev->regs, core);
+
+    usb_globalint_disable(&udev->regs);
+
+    /* initializes the USB core*/
+    (void)usb_core_init(udev->bp, &udev->regs);
+
+    /* set device disconnect */
+    usbd_disconnect(udev);
+
+#ifndef USE_OTG_MODE
+    usb_curmode_set(&udev->regs, DEVICE_MODE);
+#endif /* USE_OTG_MODE */
+
+    /* initializes device mode */
+    (void)usb_devcore_init(udev);
+
+    usb_globalint_enable(&udev->regs);
+
+    /* set device connect */
+    usbd_connect(udev);
+
+    udev->dev.cur_status = (uint8_t)USBD_DEFAULT;
+}
+
+../Firmware/GD32f4xx_usb_library/driver/Source/drv_usb_dev.c
+fix reason:
+Fix the issue where the enum_speed parameter may cause an array out-of-bounds error.
+V3.3.1:
+1.
+usb_status usb_transc0_active(usb_core_driver *udev, usb_transc *transc)
+{
+    __IO uint32_t *reg_addr = NULL;
+
+    uint8_t enum_speed = udev->regs.dr->DSTAT & DSTAT_ES;
+
+    /* get the endpoint number */
+    uint8_t ep_num = transc->ep_addr.num;
+
+    if(ep_num) {
+        /* not endpoint 0 */
+        return USB_FAIL;
+    }
+
+    if(transc->ep_addr.dir) {
+        reg_addr = &udev->regs.er_in[0]->DIEPCTL;
+    } else {
+        reg_addr = &udev->regs.er_out[0]->DOEPCTL;
+    }
+
+    /* endpoint 0 is activated after USB clock is enabled */
+    *reg_addr &= ~(DEPCTL_MPL | DEPCTL_EPTYPE | DIEPCTL_TXFNUM);
+
+    /* set endpoint 0 maximum packet length */
+    *reg_addr |= EP0_MAXLEN[enum_speed];
+
+    /* activate endpoint */
+    *reg_addr |= ((uint32_t)transc->ep_type << 18U) | ((uint32_t)ep_num << 22U) | DEPCTL_SD0PID | DEPCTL_EPACT;
+
+    return USB_OK;
+}
+
+2.
+usb_status usb_transc_active(usb_core_driver *udev, usb_transc *transc)
+{
+    __IO uint32_t *reg_addr = NULL;
+    uint32_t epinten = 0U;
+    uint8_t enum_speed = udev->regs.dr->DSTAT & DSTAT_ES;
+
+    /* get the endpoint number */
+    uint8_t ep_num = transc->ep_addr.num;
+
+    /* enable endpoint interrupt number */
+    if(transc->ep_addr.dir) {
+        reg_addr = &udev->regs.er_in[ep_num]->DIEPCTL;
+
+        epinten = 1U << ep_num;
+    } else {
+        reg_addr = &udev->regs.er_out[ep_num]->DOEPCTL;
+
+        epinten = 1U << (16U + ep_num);
+    }
+
+    /* if the endpoint is not active, need change the endpoint control register */
+    if(!(*reg_addr & DEPCTL_EPACT)) {
+        *reg_addr &= ~(DEPCTL_MPL | DEPCTL_EPTYPE | DIEPCTL_TXFNUM);
+
+        /* set endpoint maximum packet length */
+        if(0U == ep_num) {
+            *reg_addr |= EP0_MAXLEN[enum_speed];
+        } else {
+            *reg_addr |= transc->max_len;
+        }
+
+        /* activate endpoint */
+        *reg_addr |= ((uint32_t)transc->ep_type << 18U) | ((uint32_t)ep_num << 22U) | DEPCTL_SD0PID | DEPCTL_EPACT;
+    }
+
+#ifdef USB_HS_DEDICATED_EP1_ENABLED
+    if((1U == ep_num) && (USB_CORE_ENUM_HS == udev->bp.core_enum)) {
+        udev->regs.dr->DEP1INTEN |= epinten;
+    } else
+#endif /* USB_HS_DEDICATED_EP1_ENABLED */
+    {
+        /* enable the interrupts for this endpoint */
+        udev->regs.dr->DAEPINTEN |= epinten;
+    }
+
+    return USB_OK;
+}
+
+V3.3.2:
+1.
+usb_status usb_transc0_active(usb_core_driver *udev, usb_transc *transc)
+{
+    __IO uint32_t *reg_addr = NULL;
+
+    uint8_t enum_speed = ((udev->regs.dr->DSTAT & DSTAT_ES) >> 1U);
+
+    /* get the endpoint number */
+    uint8_t ep_num = transc->ep_addr.num;
+
+    if(ep_num) {
+        /* not endpoint 0 */
+        return USB_FAIL;
+    }
+
+    if(transc->ep_addr.dir) {
+        reg_addr = &udev->regs.er_in[0]->DIEPCTL;
+    } else {
+        reg_addr = &udev->regs.er_out[0]->DOEPCTL;
+    }
+
+    /* endpoint 0 is activated after USB clock is enabled */
+    *reg_addr &= ~(DEPCTL_MPL | DEPCTL_EPTYPE | DIEPCTL_TXFNUM);
+
+    /* set endpoint 0 maximum packet length */
+    *reg_addr |= EP0_MAXLEN[enum_speed];
+
+    /* activate endpoint */
+    *reg_addr |= ((uint32_t)transc->ep_type << 18U) | ((uint32_t)ep_num << 22U) | DEPCTL_SD0PID | DEPCTL_EPACT;
+
+    return USB_OK;
+}
+2.
+usb_status usb_transc_active(usb_core_driver *udev, usb_transc *transc)
+{
+    __IO uint32_t *reg_addr = NULL;
+    uint32_t epinten = 0U;
+    uint8_t enum_speed = ((udev->regs.dr->DSTAT & DSTAT_ES) >> 1U);
+
+    /* get the endpoint number */
+    uint8_t ep_num = transc->ep_addr.num;
+
+    /* enable endpoint interrupt number */
+    if(transc->ep_addr.dir) {
+        reg_addr = &udev->regs.er_in[ep_num]->DIEPCTL;
+
+        epinten = 1U << ep_num;
+    } else {
+        reg_addr = &udev->regs.er_out[ep_num]->DOEPCTL;
+
+        epinten = 1U << (16U + ep_num);
+    }
+
+    /* if the endpoint is not active, need change the endpoint control register */
+    if(!(*reg_addr & DEPCTL_EPACT)) {
+        *reg_addr &= ~(DEPCTL_MPL | DEPCTL_EPTYPE | DIEPCTL_TXFNUM);
+
+        /* set endpoint maximum packet length */
+        if(0U == ep_num) {
+            *reg_addr |= EP0_MAXLEN[enum_speed];
+        } else {
+            *reg_addr |= transc->max_len;
+        }
+
+        /* activate endpoint */
+        *reg_addr |= ((uint32_t)transc->ep_type << 18U) | ((uint32_t)ep_num << 22U) | DEPCTL_SD0PID | DEPCTL_EPACT;
+    }
+
+#ifdef USB_HS_DEDICATED_EP1_ENABLED
+    if((1U == ep_num) && (USB_CORE_ENUM_HS == udev->bp.core_enum)) {
+        udev->regs.dr->DEP1INTEN |= epinten;
+    } else
+#endif /* USB_HS_DEDICATED_EP1_ENABLED */
+    {
+        /* enable the interrupts for this endpoint */
+        udev->regs.dr->DAEPINTEN |= epinten;
+    }
+
+    return USB_OK;
+}
+_________________________________________________________________________________________________________________________
+
+_____________________USBFS________________________________________________________________________________________________
+
+_____________________________________________________________________________________________________________________
+
+______________________USBHS_______________________________________________________________________________________________
+../Firmware/GD32f4xx_usb_library/driver/Source/drv_usbh_int.c
+fix reason:
+In the host file drv_usbh_int.c, the handling of the out channel causes usb_pp_halt to be executed twice. 
+Remove the redundant usb_pp_halt function.
+V3.3.1:
+static uint32_t usbh_int_pipe_out(usb_core_driver *udev, uint32_t pp_num)
+{
+    usbh_host *uhost = udev->host.data;
+    usb_pr *pp_reg = udev->regs.pr[pp_num];
+    usb_pipe *pp = &udev->host.pipe[pp_num];
+    uint32_t intr_pp = pp_reg->HCHINTF;
+    intr_pp &= pp_reg->HCHINTEN;
+
+    if(intr_pp & HCHINTF_ACK) {
+        if(1U == udev->host.pipe[pp_num].do_ping) {
+            udev->host.pipe[pp_num].do_ping = 0U;
+            pp->err_count = 0U;
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_ACK, PIPE_NAK);
+        }
+
+        pp_reg->HCHINTF = HCHINTF_ACK;
+    } else if(intr_pp & HCHINTF_STALL) {
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_STALL, PIPE_STALL);
+    } else if(intr_pp & HCHINTF_DTER) {
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_DTER, PIPE_DTGERR);
+        pp_reg->HCHINTF = HCHINTF_NAK;
+    } else if(intr_pp & HCHINTF_REQOVR) {
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_REQOVR, PIPE_REQOVR);
+    } else if(intr_pp & HCHINTF_TF) {
+        pp->err_count = 0U;
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_TF, PIPE_XF);
+    } else if(intr_pp & HCHINTF_NAK) {
+        if(0U == udev->host.pipe[pp_num].do_ping) {
+            if(1U == udev->host.pipe[pp_num].supp_ping) {
+                udev->host.pipe[pp_num].do_ping = 1U;
+            }
+        }
+
+        pp->err_count = 0U;
+        if(USB_USE_FIFO == udev->bp.transfer_mode) {
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_NAK, PIPE_NAK);
+        } else {
+            pp_reg->HCHINTF = HCHINTF_NAK;
+        }
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_NAK, PIPE_NAK);
+    } else if(intr_pp & HCHINTF_USBER) {
+        pp->err_count++;
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_USBER, PIPE_TRACERR);
+    } else if(intr_pp & HCHINTF_NYET) {
+        if(CTL_STATUS_OUT != uhost->control.ctl_state) {
+            if(0U == udev->host.pipe[pp_num].do_ping) {
+                if(1U == udev->host.pipe[pp_num].supp_ping) {
+                    udev->host.pipe[pp_num].do_ping = 1U;
+                }
+            }
+
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_NYET, PIPE_NYET);
+        } else {
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_NYET, PIPE_XF);
+        }
+
+        pp->err_count = 0U;
+    } else if(intr_pp & HCHINTF_CH) {
+        udev->regs.pr[pp_num]->HCHINTEN &= ~HCHINTEN_CHIE;
+
+        switch(pp->pp_status) {
+        case PIPE_XF:
+            pp->urb_state = URB_DONE;
+
+            if((uint8_t)USB_EPTYPE_BULK == ((pp_reg->HCHCTL & HCHCTL_EPTYPE) >> 18)) {
+                pp->data_toggle_out ^= 1U;
+            }
+            break;
+
+        case PIPE_NAK:
+            pp->urb_state = URB_NOTREADY;
+            break;
+        case PIPE_NYET:
+            pp->urb_state = URB_DONE;
+
+            if((uint8_t)USB_EPTYPE_BULK == ((pp_reg->HCHCTL & HCHCTL_EPTYPE) >> 18)) {
+                pp->data_toggle_out ^= 1U;
+            }
+            break;
+
+        case PIPE_STALL:
+            pp->urb_state = URB_STALL;
+            break;
+
+        case PIPE_TRACERR:
+            if(3U == pp->err_count) {
+                pp->urb_state = URB_ERROR;
+                pp->err_count = 0U;
+            }
+            break;
+
+        case PIPE_IDLE:
+        case PIPE_HALTED:
+        case PIPE_BBERR:
+        case PIPE_REQOVR:
+        case PIPE_DTGERR:
+        default:
+            break;
+        }
+
+        pp_reg->HCHINTF = HCHINTF_CH;
+    } else {
+        /* no operation */
+    }
+
+    return 1U;
+}
+V3.3.2
+static uint32_t usbh_int_pipe_out(usb_core_driver *udev, uint32_t pp_num)
+{
+    usbh_host *uhost = udev->host.data;
+    usb_pr *pp_reg = udev->regs.pr[pp_num];
+    usb_pipe *pp = &udev->host.pipe[pp_num];
+    uint32_t intr_pp = pp_reg->HCHINTF;
+    intr_pp &= pp_reg->HCHINTEN;
+
+    if(intr_pp & HCHINTF_ACK) {
+        if(1U == udev->host.pipe[pp_num].do_ping) {
+            udev->host.pipe[pp_num].do_ping = 0U;
+            pp->err_count = 0U;
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_ACK, PIPE_NAK);
+        }
+
+        pp_reg->HCHINTF = HCHINTF_ACK;
+    } else if(intr_pp & HCHINTF_STALL) {
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_STALL, PIPE_STALL);
+    } else if(intr_pp & HCHINTF_DTER) {
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_DTER, PIPE_DTGERR);
+        pp_reg->HCHINTF = HCHINTF_NAK;
+    } else if(intr_pp & HCHINTF_REQOVR) {
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_REQOVR, PIPE_REQOVR);
+    } else if(intr_pp & HCHINTF_TF) {
+        pp->err_count = 0U;
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_TF, PIPE_XF);
+    } else if(intr_pp & HCHINTF_NAK) {
+        if(0U == udev->host.pipe[pp_num].do_ping) {
+            if(1U == udev->host.pipe[pp_num].supp_ping) {
+                udev->host.pipe[pp_num].do_ping = 1U;
+            }
+        }
+
+        pp->err_count = 0U;
+        if(USB_USE_FIFO == udev->bp.transfer_mode) {
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_NAK, PIPE_NAK);
+        } else {
+            pp_reg->HCHINTF = HCHINTF_NAK;
+        }
+    } else if(intr_pp & HCHINTF_USBER) {
+        pp->err_count++;
+        usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_USBER, PIPE_TRACERR);
+    } else if(intr_pp & HCHINTF_NYET) {
+        if(CTL_STATUS_OUT != uhost->control.ctl_state) {
+            if(0U == udev->host.pipe[pp_num].do_ping) {
+                if(1U == udev->host.pipe[pp_num].supp_ping) {
+                    udev->host.pipe[pp_num].do_ping = 1U;
+                }
+            }
+
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_NYET, PIPE_NYET);
+        } else {
+            usb_pp_halt(udev, (uint8_t)pp_num, HCHINTF_NYET, PIPE_XF);
+        }
+
+        pp->err_count = 0U;
+    } else if(intr_pp & HCHINTF_CH) {
+        udev->regs.pr[pp_num]->HCHINTEN &= ~HCHINTEN_CHIE;
+
+        switch(pp->pp_status) {
+        case PIPE_XF:
+            pp->urb_state = URB_DONE;
+
+            if((uint8_t)USB_EPTYPE_BULK == ((pp_reg->HCHCTL & HCHCTL_EPTYPE) >> 18)) {
+                pp->data_toggle_out ^= 1U;
+            }
+            break;
+
+        case PIPE_NAK:
+            pp->urb_state = URB_NOTREADY;
+            break;
+        case PIPE_NYET:
+            pp->urb_state = URB_DONE;
+
+            if((uint8_t)USB_EPTYPE_BULK == ((pp_reg->HCHCTL & HCHCTL_EPTYPE) >> 18)) {
+                pp->data_toggle_out ^= 1U;
+            }
+            break;
+
+        case PIPE_STALL:
+            pp->urb_state = URB_STALL;
+            break;
+
+        case PIPE_TRACERR:
+            if(3U == pp->err_count) {
+                pp->urb_state = URB_ERROR;
+                pp->err_count = 0U;
+            }
+            break;
+
+        case PIPE_IDLE:
+        case PIPE_HALTED:
+        case PIPE_BBERR:
+        case PIPE_REQOVR:
+        case PIPE_DTGERR:
+        default:
+            break;
+        }
+
+        pp_reg->HCHINTF = HCHINTF_CH;
+    } else {
+        /* no operation */
+    }
+
+    return 1U;
+}
+________________________________________________________________________________________________________________________
+ 
+______________________VREF________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________WDGT________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+
+______________________WIFI________________________________________________________________________________________________
+
+
+__________________________________________________________________________________________________________________________
+

@@ -1,0 +1,32 @@
+# ============================================================
+#  GD32F450 GPS 终端 —— 仓库忽略规则
+#  仓库内容：Template/（本工程）+ Firmware/（CMSIS 与标准外设库）+ Utilities/
+#  说明：Keil 工程以 ..\..\Firmware\... 与 ..\..\Utilities 相对路径引用库文件，
+#        因此这三者必须保持同级目录结构。
+# ============================================================
+
+# ---- 不在本仓库范围内的 GigaDevice 原始资料 ----
+/Docs/
+/Examples/
+
+# ---- Keil / MDK 编译产物 ----
+/Template/Keil5_project/output/
+/Template/Keil5_project/list/
+/Template/Keil4_project/output/
+/Template/Keil4_project/list/
+/Template/GD32EBuilder_project/**/Output/
+/Template/IAR_project/**/Debug/
+/Template/IAR_project/**/Release/
+*.uvguix.*
+*.build_log.htm
+JLinkLog.txt
+
+# ---- SRecord 打包工具（工程 RunUserProg 未调用，可自行下载）----
+/Template/Keil5_project/*.exe
+/Template/Keil5_project/*.dll
+
+# ---- 本地改动备份 ----
+*.bak
+*.bak_*
+*.orig
+*.rej
