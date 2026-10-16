@@ -130,8 +130,11 @@ priority than this! (higher priorities are lower numeric values. */
 
 
 
-/* normal assert() semantics without relying on the provision of an assert.h header file */
-#define configASSERT( x )                              if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); for( ;; ); } 
+/* normal assert() semantics without relying on the provision of an assert.h header file.
+ * 断言失败不再"关中断 + 死循环"：那样板子会彻底安静，现场什么线索都没有。
+ * 改成打印失败位置(文件:行)后软复位，实现见 gd32f4xx_it.c 的 vAssertFailed()。 */
+void vAssertFailed(const char *file, long line);
+#define configASSERT( x )                              if( ( x ) == 0 ) { vAssertFailed( __FILE__, __LINE__ ); } 
 
 /* map the FreeRTOS port interrupt handlers to CMSIS standard names */
 #define vPortSVCHandler SVC_Handler

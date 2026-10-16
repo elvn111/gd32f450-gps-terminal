@@ -155,6 +155,7 @@ static int link_tx(const uint8_t *buf, uint16_t len)
 }
 
 /* 发布新值(保最新)：直接组帧进空闲的乒乓槽，避免大缓冲占任务栈 */
+/* valid 是按值传入的：下面量程检查可能把它改成 0，所以这里要能被改写 */
 void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t valid)
 {
     uint8_t target = (0U == s_pkt_busy) ? 1U : 0U;   /* 不写正在发送的那个缓冲 */
@@ -177,6 +178,22 @@ void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t v
                                                          : (info->ElpHeight * 1000.0 - 0.5));
         uint16_t head = (uint16_t)(info->Heading_Angle * 100.0);
         uint32_t base = (uint32_t)(info->Baseline * 1000.0);
+
+        /* 量程检查：模块没有定位时会在海拔字段里给出自己的 ECEF 值
+          * (实测 -6378154.1620)，乘 1000 转毫米就溢出 int32，
+          * 帧里会出现 -2083186.866 m 这种鬼值。超量程的一律按 0 处理并标无效。 */
+        if ((lat > 900000000) || (lat < -900000000)) {
+            lat = 0; valid = 0U;
+        }
+        if ((lon > 1800000000) || (lon < -1800000000)) {
+            lon = 0; valid = 0U;
+        }
+        if ((info->ElpHeight > 20000.0) || (info->ElpHeight < -20000.0)) {
+            hgt = 0; valid = 0U;
+        }
+        if ((info->Baseline > 20000.0) || (info->Baseline < 0.0)) {
+            base = 0U;
+        }
 
         memcpy(&data[i], &lat, 4U);  i += 4U;
         memcpy(&data[i], &lon, 4U);  i += 4U;

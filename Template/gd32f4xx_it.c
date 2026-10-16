@@ -43,6 +43,84 @@ extern FlagStatus g_transfer_complete;
 extern SemaphoreHandle_t GPSRX_Semaph;
 extern SemaphoreHandle_t RX_Semaph;
 
+/* =====================================================================
+ * 崩溃自报 + 自愈
+ * 以前任何异常/断言失败都是"关中断 + 死循环"：板子从此一个字节都不发，
+ * 现场也没有任何线索，只能断电重来。现在改成"打印原因 + 软复位"，
+ * 下一次上电看 [rst] 的 SW 位和心跳就能知道板子在崩溃-重启。
+ * 这里刻意不用 printf、不取控制台锁、不依赖调度器：直接轮询 USART0，
+ * 每个等待都有上限，保证一定能走到复位那一步。
+ * ===================================================================== */
+static void crash_putc(char c)
+{
+    uint32_t guard = 0U;
+
+    while((RESET == usart_flag_get(USART0, USART_FLAG_TBE)) && (guard < 400000U)){
+        guard++;
+    }
+    if(guard < 400000U){
+        usart_data_transmit(USART0, (uint16_t)(uint8_t)c);
+    }
+}
+
+static void crash_puts(const char *s)
+{
+    while('\0' != *s){
+        crash_putc(*s++);
+    }
+}
+
+static void crash_puthex(uint32_t v)
+{
+    int8_t i;
+
+    for(i = 28; i >= 0; i -= 4){
+        crash_putc("0123456789ABCDEF"[(v >> (uint8_t)i) & 0x0FU]);
+    }
+}
+
+static void crash_putdec(uint32_t v)
+{
+    char     buf[12];
+    uint8_t  n = 0U;
+
+    if(0U == v){
+        crash_putc('0');
+        return;
+    }
+    while((0U != v) && (n < (uint8_t)sizeof(buf))){
+        buf[n++] = (char)('0' + (v % 10U));
+        v /= 10U;
+    }
+    while(0U != n){
+        crash_putc(buf[--n]);
+    }
+}
+
+/* 打印完就复位：不停机、能自愈，原因留在串口上 */
+static void crash_reset(void)
+{
+    volatile uint32_t i;
+
+    crash_puts("\r\n[crash] rebooting\r\n");
+    for(i = 0U; i < 800000U; i++){      /* 等最后几个字节移出去 */
+    }
+    NVIC_SystemReset();
+    for(;;){                            /* 不该走到这里 */
+    }
+}
+
+/* configASSERT 的实现：打印断言位置(文件:行)后复位 */
+void vAssertFailed(const char *file, long line)
+{
+    crash_puts("\r\n*** ASSERT FAILED at ");
+    crash_puts((NULL != file) ? file : "?");
+    crash_putc(':');
+    crash_putdec((uint32_t)line);
+    crash_puts(" ***");
+    crash_reset();
+}
+
 /*!
     \brief      this function handles NMI exception
     \param[in]  none
@@ -51,9 +129,8 @@ extern SemaphoreHandle_t RX_Semaph;
 */
 void NMI_Handler(void)
 {
-    /* if NMI exception occurs, go to infinite loop */
-    while(1) {
-    }
+    crash_puts("\r\n*** NMI ***");
+    crash_reset();
 }
 
 /*!
@@ -87,8 +164,18 @@ void HardFault_Handler(void)
     g_fault_bfar = SCB->BFAR;
     g_fault_mmfar = SCB->MMFAR;
 
-    while(1) {
-    }
+    crash_puts("\r\n*** HardFault pc_msp=0x");
+    crash_puthex(g_fault_pc_msp);
+    crash_puts(" pc_psp=0x");
+    crash_puthex(g_fault_pc_psp);
+    crash_puts(" cfsr=0x");
+    crash_puthex(g_fault_cfsr);
+    crash_puts(" hfsr=0x");
+    crash_puthex(g_fault_hfsr);
+    crash_puts(" bfar=0x");
+    crash_puthex(g_fault_bfar);
+    crash_puts(" ***");
+    crash_reset();
 }
 
 /*!
@@ -99,9 +186,12 @@ void HardFault_Handler(void)
 */
 void MemManage_Handler(void)
 {
-    /* if Memory Manage exception occurs, go to infinite loop */
-    while(1) {
-    }
+    crash_puts("\r\n*** MemManage (cfsr=0x");
+    crash_puthex(SCB->CFSR);
+    crash_puts(" mmfar=0x");
+    crash_puthex(SCB->MMFAR);
+    crash_puts(") ***");
+    crash_reset();
 }
 
 /*!
@@ -112,9 +202,12 @@ void MemManage_Handler(void)
 */
 void BusFault_Handler(void)
 {
-    /* if Bus Fault exception occurs, go to infinite loop */
-    while(1) {
-    }
+    crash_puts("\r\n*** BusFault (cfsr=0x");
+    crash_puthex(SCB->CFSR);
+    crash_puts(" bfar=0x");
+    crash_puthex(SCB->BFAR);
+    crash_puts(") ***");
+    crash_reset();
 }
 
 /*!
@@ -125,9 +218,10 @@ void BusFault_Handler(void)
 */
 void UsageFault_Handler(void)
 {
-    /* if Usage Fault exception occurs, go to infinite loop */
-    while(1) {
-    }
+    crash_puts("\r\n*** UsageFault (cfsr=0x");
+    crash_puthex(SCB->CFSR);
+    crash_puts(") ***");
+    crash_reset();
 }
 
 /*!

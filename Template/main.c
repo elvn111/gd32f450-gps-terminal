@@ -207,11 +207,41 @@ int fputc(int ch, FILE *f)
 /* 开机预设命令。这里刻意不发 "freset"：那是模块恢复出厂，会清掉 saveconfig 存下的配置
   * 并强制冷启动重收敛，第一次定位要多等几十秒。真需要恢复出厂，用 gps reset 手动发。 */
 const char GPS_CMD[STRING_NUM][STRING_LEN]={
-	"unlogall\r\n",
-	"set appscene survey\r\n",
-	"log com1 gpnav ontime 1\r\n",
-	"log com1 gpybm ontime 1\r\n",
+	"unlogall\r\n",                     /* 0: 只在第一遍发 —— 清掉旧日志 */
+	"set appscene survey\r\n",          /* 1: 只在第一遍发 —— 场景设为测量 */
+	"log com1 gpnav ontime 1\r\n",      /* 2: 每次都发 —— 1 Hz 导航数据 */
+	"log com1 gpybm ontime 1\r\n",      /* 3: 每次都发 —— 1 Hz 观测数据 */
 };
+
+/* =====================================================================
+ * 预设命令的发送管理(现场实测出来的三条结论，上电"不发"就栽在这里)
+ *   1) 命令必须一条一条发、中间留间隔。模块收到 appscene 会重启引擎，
+ *      背靠背连发时后面几行会被丢掉：实测上电那一串只有前两条被应答，
+ *      最后两条 log 丢了 —— 而 unlogall 已经把日志全部关掉、log 又没生效，
+ *      模块从此刻起一个字节都不发。
+ *   2) 重发只重发 log 两行。再发一遍 unlogall 只会把刚起来的日志又关掉。
+ *   3) "模块活了"只看它以 '$' 开头的语句。模块对命令的应答(OK! /
+ *      Command accepted!)不算数，否则第一遍刚发完就被应答骗过去，
+ *      日志其实没起来也不会再补发。
+ * 所以：一批命令按 250 ms 逐条发；前 3 批间隔 2 s，之后每 10 s 补一次 log，
+ *       直到模块真的出语句为止(模块中途被复位/掉电也能自愈)。
+ * ===================================================================== */
+#define GPS_PRESET_LOG_FIRST    (2U)        /* 表中第一条 log 命令的下标 */
+#define GPS_PRESET_FIRST_MS     (300U)      /* 模块启动比 MCU 慢，等它起来再发 */
+#define GPS_PRESET_CMD_GAP_MS   (250U)      /* 命令行之间的间隔 */
+#define GPS_PRESET_RETRY_MS     (2000U)     /* 前三批的间隔 */
+#define GPS_PRESET_MAX_TRIES    (3U)
+#define GPS_PRESET_SLOW_MS      (5000U)     /* 之后每 5 s 补发一次 log */
+
+static uint32_t s_preset_next_ms;       /* 下一批 / 下一条的时刻 */
+static uint8_t  s_preset_idx;           /* 批内当前要发的命令下标 */
+static uint8_t  s_preset_from;          /* 本批从哪条开始(重发跳过前两条) */
+static uint8_t  s_preset_tries;         /* 已经发过几批 */
+static uint8_t  s_preset_sending;       /* 1 = 一批正在逐条发 */
+static uint8_t  s_preset_armed;         /* 0 = 还没排期 */
+static uint8_t  s_gps_alive;            /* 1 = 模块回过任何字节 */
+static uint8_t  s_gps_data;             /* 1 = 模块回过 '$' 语句(真在出数据) */
+static uint32_t s_gps_rx_bytes;         /* 模块一共回了多少字节(心跳里报) */
 
 void uart_send_string(uint32_t usart, const char *str)
 {
@@ -236,13 +266,16 @@ void uart_send_buf(uint32_t usart, const uint8_t *buf, uint16_t len)
 }
 
 
+/* 重新走一遍预设流程。真正的发送由 gps_preset_tick() 逐条、带间隔地做
+  * (背靠背连发会让模块丢掉后面的命令)，这里只把状态机复位。
+  * 顺带修掉了原来缺 return 的 #940-D 告警。 */
 int gps_init(void)
 {
-	int i=0;
-	for(i=0;i<STRING_NUM;i++)
-    {
-		uart_send_string(USART5,GPS_CMD[i]);
-	}
+    s_gps_data       = 0U;
+    s_preset_sending = 0U;
+    s_preset_tries   = 0U;
+    s_preset_armed   = 0U;
+    return 0;
 }
 
 /* GPS 模块硬件控制：PB4 是模块复位脚，低电平复位、高电平运行。
@@ -362,17 +395,22 @@ static uint32_t plat_uptime_ms(void)
   * 在 Init_Task 里、cli_init() 之前创建。 */
 static SemaphoreHandle_t g_console_lock;
 
+/* 递归互斥量，不能用普通互斥量：
+  * cli_input() 会一直持锁到整行命令处理完，而 'info'/'fix' 这类命令在锁内
+  * 还要发一帧(link_tx() 取的是同一把锁，用来保证帧和控制台文字不交叉)。
+  * 普通互斥量遇到同任务重复进入就是自锁：RX_Task 永久阻塞且不释放，
+  * TX_Task 随后也卡在锁上 => 控制台与下行帧全部停摆，只能重新上电。 */
 static void plat_out_lock(void)
 {
     if(NULL != g_console_lock){
-        (void)xSemaphoreTake(g_console_lock, portMAX_DELAY);
+        (void)xSemaphoreTakeRecursive(g_console_lock, portMAX_DELAY);
     }
 }
 
 static void plat_out_unlock(void)
 {
     if(NULL != g_console_lock){
-        (void)xSemaphoreGive(g_console_lock);
+        (void)xSemaphoreGiveRecursive(g_console_lock);
     }
 }
 
@@ -534,10 +572,15 @@ int main(void)
   *   EPRST = NRST 被外部拉低（调试器、串口工具的 DTR/RTS 都可能）
   *   SW / FWDGT / WWDGT = 软件复位或看门狗
   *   POR   = 正常上电 */
+/* 本次上电读到的复位标志，心跳里要重复用 */
+static uint32_t s_rst_rstsck = 0U;
+
 static void reset_cause_print(void)
 {
     uint32_t f = RCU_RSTSCK;
     const char *src = "unknown";
+
+    s_rst_rstsck = f;
 
     if (0U != (f & RCU_RSTSCK_PORRSTF)) {
         src = "POR (power-on)";
@@ -555,7 +598,17 @@ static void reset_cause_print(void)
         src = "LPRST (low-power reset)";
     }
 
+    /* 逐位打印：一次复位可能同时置多个标志(POR 与 EPRST 一起出现很常见)，
+      * 只报第一个命中的名字会把另一半信息丢掉。 */
     printf("\r\n[rst] RCU_RSTSCK=0x%08lX -> %s\r\n", (unsigned long)f, src);
+    printf("[rst] bits: POR=%u BOR=%u EPRST=%u SW=%u FWDT=%u WWDT=%u LRST=%u\r\n",
+           (unsigned)((0U != (f & RCU_RSTSCK_PORRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (f & RCU_RSTSCK_BORRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (f & RCU_RSTSCK_EPRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (f & RCU_RSTSCK_SWRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (f & RCU_RSTSCK_FWDGTRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (f & RCU_RSTSCK_WWDGTRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (f & RCU_RSTSCK_LPRSTF)) ? 1U : 0U));
     RCU_RSTSCK |= RCU_RSTSCK_RSTFC;         /* 清标志：下次复位才能看出新原因 */
 }
 
@@ -592,7 +645,7 @@ void Init_Task(void *pvParameters)
       * 它会等 1 s（模块启动更慢）并在模块静默时自动重发。 */
     gd_eval_led_init (LED1);
 
-    g_console_lock = xSemaphoreCreateMutex();
+    g_console_lock = xSemaphoreCreateRecursiveMutex();
     cli_init(&g_cli_plat);
     xTaskCreate(LED_Task, "LED", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
     xTaskCreate(RX_Task, "RECEIVE", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
@@ -655,53 +708,152 @@ static void gps_report_print(const gps_fix_t *f)
     cli_out_unlock();
 }
 
-/* =====================================================================
- * GPS 预设命令的重发管理
- * 模块启动可能比 MCU 慢，开机只发一遍预设的话命令会被丢掉，模块从此静默。
- *   上电 1 s 后发第一遍（第一遍始终发，保留 unlogall 清重复注册的语义）
- *   之后若模块一个字节都没回，每 2 s 重发一遍，最多 3 遍
- *   GPSRX_Task 收到任何字节即置 s_gps_alive，重发立刻停止
- * ===================================================================== */
-#define GPS_PRESET_FIRST_MS     (1000U)
-#define GPS_PRESET_RETRY_MS     (2000U)
-#define GPS_PRESET_MAX_TRIES    (3U)
-
-static uint32_t s_preset_next_ms;       /* 下一次该发的时刻，0 = 还没排期 */
-static uint8_t  s_preset_tries;         /* 已经发过几遍 */
-static uint8_t  s_gps_alive;            /* 1 = 模块已经有数据回来 */
-
+/* 预设命令逐条发送的状态机：见文件前面"预设命令的发送管理"的说明 */
 static void gps_preset_tick(void)
 {
     uint32_t now = plat_uptime_ms();
 
-    if (0U == s_preset_next_ms) {               /* 首次调用：排期 */
+    if (0U != s_gps_data) {
+        return;                                 /* 模块已经在出语句：收工 */
+    }
+    if (0U == s_preset_armed) {                 /* 首次调用 / 命令重新武装 */
+        s_preset_armed   = 1U;
         s_preset_next_ms = now + GPS_PRESET_FIRST_MS;
         return;
     }
     if ((int32_t)(now - s_preset_next_ms) < 0) {
         return;
     }
-    if (0U != s_preset_tries) {                 /* 第一遍已经发过 */
-        if (0U != s_gps_alive) {
-            return;                             /* 模块有反应了，不再重发 */
-        }
-        if (s_preset_tries > GPS_PRESET_MAX_TRIES) {
-            return;                             /* 试够了 */
-        }
+
+    if (0U == s_preset_sending) {               /* 开一批 */
+        s_preset_from    = (0U == s_preset_tries) ? 0U : (uint8_t)GPS_PRESET_LOG_FIRST;
+        s_preset_idx     = s_preset_from;
+        s_preset_sending = 1U;
+        s_preset_next_ms = now;
+        return;                                 /* 下个 tick 起一条一条发 */
     }
+
+    uart_send_string(USART5, GPS_CMD[s_preset_idx]);    /* 一次只发一条 */
+    s_preset_idx++;
+    s_preset_next_ms = now + GPS_PRESET_CMD_GAP_MS;
+
+    if (s_preset_idx >= (uint8_t)STRING_NUM) {          /* 一批发完 */
+        s_preset_sending = 0U;
+        s_preset_tries++;
+        s_preset_next_ms = now + ((s_preset_tries < GPS_PRESET_MAX_TRIES)
+                                  ? GPS_PRESET_RETRY_MS : GPS_PRESET_SLOW_MS);
+        cli_out_lock();
+        if (1U == s_preset_tries) {
+            printf("[gps] preset sent one by one, waiting for module data\r\n");
+        } else {
+            printf("[gps] module quiet, log commands re-sent (%u)\r\n",
+                   (unsigned)s_preset_tries);
+        }
+        cli_out_unlock();
+    }
+}
+
+/* =====================================================================
+ * 链路保活
+ * 模块静默时(没接天线、还没定位、模块没起来)以前是发完 3 遍预设就彻底安静，
+ * 打开串口的那一刻什么都看不到，看起来就是"不发"。
+ * 这里保证下行任何时刻都不会超过 1 s 没有帧：
+ *   每秒检查一次已发帧数，这一秒里有帧出去过就不动(正常定位时不增加流量)，
+ *   一帧都没有才补发一帧终端信息帧(证明终端活着，对端也能据此知道链路通)。
+ *   命令 'out off' 是明确要求不发，此时不补。
+ * ===================================================================== */
+#define GPS_KEEPALIVE_MS        (1000U)
+#define GPS_KEEPALIVE_FIRST_MS  (300U)      /* 上电第一帧只等 300 ms：先让线上有帧 */
+
+static uint32_t s_keepalive_next_ms;    /* 下一次检查的时刻 */
+static uint32_t s_keepalive_frames;     /* 上次检查时已发出的帧数 */
+
+static void gps_keepalive_tick(void)
+{
+    gps_link_stats_t    ls;
+    const cli_config_t *cfg = cli_config_get();
+    uint32_t            now = plat_uptime_ms();
+
+    if (0U == s_keepalive_next_ms) {            /* 首次调用：排期 */
+        s_keepalive_next_ms = now + GPS_KEEPALIVE_FIRST_MS;
+        return;
+    }
+    if ((int32_t)(now - s_keepalive_next_ms) < 0) {
+        return;
+    }
+    s_keepalive_next_ms = now + GPS_KEEPALIVE_MS;
+
+    memset(&ls, 0, sizeof(ls));
+    gps_link_stats_get(&ls);
+    if (ls.tx_frames != s_keepalive_frames) {   /* 这一秒里已经有帧发出去了 */
+        s_keepalive_frames = ls.tx_frames;
+        return;
+    }
+    if (LINK_OUT_OFF == cfg->out) {             /* 用户要求不发 */
+        return;
+    }
+    (void)plat_link_info_send();
+    memset(&ls, 0, sizeof(ls));
+    gps_link_stats_get(&ls);                    /* 把自己这一帧也算进去，下一轮才判得准 */
+    s_keepalive_frames = ls.tx_frames;
+}
+
+/* =====================================================================
+ * 上电心跳：把"板子活着吗 / 帧发出去没有 / 模块回话没有"打成一行，
+ * 上电后前 20 秒每秒一行，然后自动安静(verbose 打开时一直打)。
+ * 排查"不发"时先看这一行：
+ *   up 一直在涨        -> 没有复位，板子在跑
+ *   up 反复回到 1000   -> 复位循环(看 rst 位判断是哪种复位)
+ *   tx 一直不涨        -> 帧根本没组出来/没发出去
+ *   rx5 = 0            -> 模块一个字节都没回来(预设没生效或模块没上电)
+ *   rx0 不涨           -> 控制台输入进不来(RX_Task 卡住)
+ * ===================================================================== */
+#define GPS_HB_MS       (1000U)
+#define GPS_HB_WINDOW   (20000U)
+
+static uint32_t s_hb_next_ms;
+
+static void gps_heartbeat_tick(void)
+{
+    cli_stats_t      st;
+    gps_link_stats_t ls;
+    uint32_t         now = plat_uptime_ms();
+
+    if ((now > GPS_HB_WINDOW) && (0U == cli_config_get()->verbose)) {
+        return;                                 /* 过了观察窗口就不再占控制台 */
+    }
+    if (0U == s_hb_next_ms) {
+        s_hb_next_ms = now + GPS_HB_MS;
+        return;
+    }
+    if ((int32_t)(now - s_hb_next_ms) < 0) {
+        return;
+    }
+    s_hb_next_ms = now + GPS_HB_MS;
+
+    memset(&st, 0, sizeof(st));
+    memset(&ls, 0, sizeof(ls));
+    cli_stats_get(&st);
+    gps_link_stats_get(&ls);
 
     cli_out_lock();
-    if (0U == s_preset_tries) {
-        printf("[gps] boot preset sent, waiting for module data\r\n");
-    } else {
-        printf("[gps] module silent, re-sending preset (%u/%u)\r\n",
-               (unsigned)s_preset_tries, (unsigned)GPS_PRESET_MAX_TRIES);
-    }
+    printf("[hb] up=%lums tx=%lu rx5=%lu alive=%u data=%u rx0=%lu gps_ok=%lu gps_err=%lu "
+           "rst=0x%08lX POR=%u EPRST=%u SW=%u FWDT=%u WWDT=%u\r\n",
+           (unsigned long)now,
+           (unsigned long)ls.tx_frames,
+           (unsigned long)s_gps_rx_bytes,
+           (unsigned)s_gps_alive,
+           (unsigned)s_gps_data,
+           (unsigned long)st.rx_bytes,
+           (unsigned long)st.gps_ok,
+           (unsigned long)st.gps_err,
+           (unsigned long)s_rst_rstsck,
+           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_PORRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_EPRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_SWRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_FWDGTRSTF)) ? 1U : 0U),
+           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_WWDGTRSTF)) ? 1U : 0U));
     cli_out_unlock();
-
-    (void)gps_init();
-    s_preset_tries++;
-    s_preset_next_ms = now + GPS_PRESET_RETRY_MS;
 }
 
 void TX_Task(void *pvParameters)
@@ -739,6 +891,11 @@ void TX_Task(void *pvParameters)
                     s_gps_line[--copy] = '\0';
                 }
 
+                if('$' == s_gps_line[0])
+                {
+                    s_gps_data = 1U;   /* 模块真的在出语句：预设流程可以收工 */
+                }
+
                 if(0 != gps_fix_parse_one(s_gps_line, &fix))
                 {
                     cli_stat_gps(1);
@@ -756,10 +913,11 @@ void TX_Task(void *pvParameters)
                         gps_report_print(&fix);
                     }
                 }
-                else
+                else if('$' == s_gps_line[0])
                 {
-                    cli_stat_gps(0);           /* 校验和或格式错：整句丢弃 */
+                    cli_stat_gps(0);           /* '$' 语句校验和或格式错：整句丢弃 */
                 }
+                /* 模块对命令的应答(OK! / Command accepted!)不是语句，不计数 */
 
                 /* 原报文下行：一条语句一帧，含它自己的 CRLF */
                 gps_link_publish_raw((const uint8_t *)line, line_len);
@@ -772,6 +930,8 @@ void TX_Task(void *pvParameters)
 
         /* GPS 预设重发管理 + 下行：按 out/auto 决定是否发送，绝不排队(保最新) */
         gps_preset_tick();
+        gps_keepalive_tick();       /* 每秒保证至少一帧出去，见上 */
+        gps_heartbeat_tick();       /* 上电 20 s 内每秒一行状态，见上 */
         (void)gps_link_poll();
     }
 }
@@ -800,6 +960,7 @@ void GPSRX_Task(void *pvParameters)
         }
         if(0U != len){
             s_gps_alive = 1U;       /* 模块有任何数据回来就不再重发预设 */
+            s_gps_rx_bytes += len;
         }
         memcpy(&s_gps_carry[keep], usart5_rx_buf, len);
         keep = (uint16_t)(keep + len);
@@ -1011,16 +1172,18 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
             usart_data_transmit(USART0, (uint16_t)(uint8_t)*p);
         }
     }
-    for(p = " ***\r\n"; '\0' != *p; p++){
+    for(p = " *** rebooting\r\n"; '\0' != *p; p++){
         while(RESET == usart_flag_get(USART0, USART_FLAG_TBE)){
         }
         usart_data_transmit(USART0, (uint16_t)(uint8_t)*p);
     }
 
+    /* 不再停机：栈溢出后复位自愈，下一次上电的 [rst] 会带 SW=1，
+      * 串口上也留下了是哪个任务溢出的。 */
+    for(volatile uint32_t i = 0U; i < 800000U; i++){
+    }
+    NVIC_SystemReset();
     taskDISABLE_INTERRUPTS();
     for(;;){
-        gd_eval_led_toggle(LED1);        /* 快闪=任务栈溢出 */
-        for(volatile uint32_t i = 0U; i < 1000000U; i++){
-        }
     }
 }

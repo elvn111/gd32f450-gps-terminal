@@ -6,7 +6,7 @@
 /* 不带 U 后缀：FW_VERSION_STRING 由 #x 字符串化，带上 U 会变成 "1U.0U.0U" */
 #define FW_VERSION_MAJOR    1
 #define FW_VERSION_MINOR    0
-#define FW_VERSION_PATCH    0
+#define FW_VERSION_PATCH    2
 
 /* "1.0.0" —— 文本界面用（宏拼接，无需手工同步） */
 #define FW__STR(x)          #x
