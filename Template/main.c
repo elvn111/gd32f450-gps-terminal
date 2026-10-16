@@ -555,7 +555,8 @@ void Init_Task(void *pvParameters)
     gps_reset_pulse(GPS_RESET_LOW_MS);
     vTaskDelay(pdMS_TO_TICKS(GPS_RESET_BOOT_MS));
 #endif
-	gps_init();
+    /* 预设命令不在这里发：交给 TX_Task 的 gps_preset_tick()，
+      * 它会等 1 s（模块启动更慢）并在模块静默时自动重发。 */
     gd_eval_led_init (LED1);
 
     g_console_lock = xSemaphoreCreateMutex();
@@ -619,6 +620,55 @@ static void gps_report_print(const gps_fix_t *f)
     printf("[GPS_DATA]:Baseline:%f\r\n", f->info.Baseline);
     printf("[GPS_DATA]:GPS_Satellite:%d\r\n", (int)f->info.GPS_Satellite);
     cli_out_unlock();
+}
+
+/* =====================================================================
+ * GPS 预设命令的重发管理
+ * 模块启动可能比 MCU 慢，开机只发一遍预设的话命令会被丢掉，模块从此静默。
+ *   上电 1 s 后发第一遍（第一遍始终发，保留 unlogall 清重复注册的语义）
+ *   之后若模块一个字节都没回，每 2 s 重发一遍，最多 3 遍
+ *   GPSRX_Task 收到任何字节即置 s_gps_alive，重发立刻停止
+ * ===================================================================== */
+#define GPS_PRESET_FIRST_MS     (1000U)
+#define GPS_PRESET_RETRY_MS     (2000U)
+#define GPS_PRESET_MAX_TRIES    (3U)
+
+static uint32_t s_preset_next_ms;       /* 下一次该发的时刻，0 = 还没排期 */
+static uint8_t  s_preset_tries;         /* 已经发过几遍 */
+static uint8_t  s_gps_alive;            /* 1 = 模块已经有数据回来 */
+
+static void gps_preset_tick(void)
+{
+    uint32_t now = plat_uptime_ms();
+
+    if (0U == s_preset_next_ms) {               /* 首次调用：排期 */
+        s_preset_next_ms = now + GPS_PRESET_FIRST_MS;
+        return;
+    }
+    if ((int32_t)(now - s_preset_next_ms) < 0) {
+        return;
+    }
+    if (0U != s_preset_tries) {                 /* 第一遍已经发过 */
+        if (0U != s_gps_alive) {
+            return;                             /* 模块有反应了，不再重发 */
+        }
+        if (s_preset_tries > GPS_PRESET_MAX_TRIES) {
+            return;                             /* 试够了 */
+        }
+    }
+
+    cli_out_lock();
+    if (0U == s_preset_tries) {
+        printf("[gps] boot preset sent, waiting for module data\r\n");
+    } else {
+        printf("[gps] module silent, re-sending preset (%u/%u)\r\n",
+               (unsigned)s_preset_tries, (unsigned)GPS_PRESET_MAX_TRIES);
+    }
+    cli_out_unlock();
+
+    (void)gps_init();
+    s_preset_tries++;
+    s_preset_next_ms = now + GPS_PRESET_RETRY_MS;
 }
 
 void TX_Task(void *pvParameters)
@@ -687,7 +737,8 @@ void TX_Task(void *pvParameters)
             }
         }
 
-        /* 下行：按 out/auto 决定是否发送，绝不排队(保最新) */
+        /* GPS 预设重发管理 + 下行：按 out/auto 决定是否发送，绝不排队(保最新) */
+        gps_preset_tick();
         (void)gps_link_poll();
     }
 }
@@ -713,6 +764,9 @@ void GPSRX_Task(void *pvParameters)
             keep = 0U;                      /* 一直收不到行结束符：当垃圾丢掉 */
             s_gps_carry_len = 0U;
             s_gps_carry_drop++;
+        }
+        if(0U != len){
+            s_gps_alive = 1U;       /* 模块有任何数据回来就不再重发预设 */
         }
         memcpy(&s_gps_carry[keep], usart5_rx_buf, len);
         keep = (uint16_t)(keep + len);
