@@ -168,7 +168,7 @@ void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t v
 {
     uint8_t target = (0U == s_pkt_busy) ? 1U : 0U;   /* 不写正在发送的那个缓冲 */
     uint8_t data[LINK_N_FIX];
-    uint16_t i = 2U;
+    uint16_t i = 0U;            /* 帧序号也从这里开始写：段内字段必须从 0 起算 */
 
     if (NULL == info) {
         return;
@@ -215,6 +215,14 @@ void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t v
             uint32_t t = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
             i = link_put_u32(data, i, t);
         }
+    }
+
+    /* 段长自检：字段起点或宽度写错时必须当场发现。宁可丢这一帧并计数，
+      * 也不能把错位(或越界)的数据发上线 —— 帧长和 CRC 都是对的，对端看不出错。 */
+    if (i != (uint16_t)sizeof(data)) {
+        s_tx_err++;
+        s_last_err = -3;
+        return;
     }
 
     s_pkt[target].len  = link_build(s_pkt[target].buf, LINK_UP_DATA, LINK_SUB_FIX,
@@ -345,7 +353,7 @@ int gps_link_send_info(const gps_link_info_t *info)
 {
     uint8_t  data[LINK_N_INFO];
     uint16_t len;
-    uint16_t i = 2U;
+    uint16_t i = 0U;            /* 同上：段内字段从 0 起算 */
 
     if (NULL == info) {
         return -1;
@@ -363,6 +371,12 @@ int gps_link_send_info(const gps_link_info_t *info)
     data[i++] = info->auto_mode;
     data[i++] = info->rate;
     data[i++] = info->sat_min;
+
+    if (i != (uint16_t)sizeof(data)) {      /* 同上：段长自检 */
+        s_tx_err++;
+        s_last_err = -3;
+        return -1;
+    }
 
     len = link_build(s_tx_one, LINK_UP_DATA, LINK_SUB_INFO, data, (uint16_t)sizeof(data));
     if (0 != link_tx(s_tx_one, len)) {
