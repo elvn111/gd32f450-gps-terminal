@@ -528,6 +528,37 @@ int main(void)
 	\param[out] none
 	\retval     none
 */
+/* 上电打印复位来源（读 RCU_RSTSCK 并清零）。
+  * 反复打印开机横幅 = 板子在反复复位，这一行会说明是谁把它复位的：
+  *   BOR   = 供电跌落（最常见：模块/天线一工作电流拉低电压）
+  *   EPRST = NRST 被外部拉低（调试器、串口工具的 DTR/RTS 都可能）
+  *   SW / FWDGT / WWDGT = 软件复位或看门狗
+  *   POR   = 正常上电 */
+static void reset_cause_print(void)
+{
+    uint32_t f = RCU_RSTSCK;
+    const char *src = "unknown";
+
+    if (0U != (f & RCU_RSTSCK_PORRSTF)) {
+        src = "POR (power-on)";
+    } else if (0U != (f & RCU_RSTSCK_BORRSTF)) {
+        src = "BOR (BROWN-OUT: supply dropped!)";
+    } else if (0U != (f & RCU_RSTSCK_EPRSTF)) {
+        src = "EPRST (external NRST pin pulled low!)";
+    } else if (0U != (f & RCU_RSTSCK_SWRSTF)) {
+        src = "SW (software reset NVIC_SystemReset)";
+    } else if (0U != (f & RCU_RSTSCK_FWDGTRSTF)) {
+        src = "FWDGT (free watchdog reset!)";
+    } else if (0U != (f & RCU_RSTSCK_WWDGTRSTF)) {
+        src = "WWDGT (window watchdog reset!)";
+    } else if (0U != (f & RCU_RSTSCK_LPRSTF)) {
+        src = "LPRST (low-power reset)";
+    }
+
+    printf("\r\n[rst] RCU_RSTSCK=0x%08lX -> %s\r\n", (unsigned long)f, src);
+    RCU_RSTSCK |= RCU_RSTSCK_RSTFC;         /* 清标志：下次复位才能看出新原因 */
+}
+
 void Init_Task(void *pvParameters)
 {
     /* 信号量必须在下面使能任何 USART 中断之前创建：
@@ -546,6 +577,8 @@ void Init_Task(void *pvParameters)
     nvic_config();
     dma_config();
     usart_config();
+
+    reset_cause_print();        /* 开机第一行：上一次复位是谁引起的 */
 
     /* USART0 发送 DMA(DMA1 CH7)：给第二颗 MCU 的下行链路 */
     gps_link_init();
