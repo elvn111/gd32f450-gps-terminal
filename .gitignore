@@ -40,3 +40,7 @@ JLinkLog.txt
 /tests/*.exe
 /tests/test_info_bsp_test
 /tests/*.o
+
+# python »º´æ
+__pycache__/
+*.pyc
