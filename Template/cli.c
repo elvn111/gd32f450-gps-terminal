@@ -275,6 +275,7 @@ static int cmd_mode(int argc, char **argv);
 static int cmd_out(int argc, char **argv);
 static int cmd_auto(int argc, char **argv);
 static int cmd_fix(int argc, char **argv);
+static int cmd_send(int argc, char **argv);
 static int cmd_gstat(int argc, char **argv);
 static int cmd_info(int argc, char **argv);
 static int cmd_bridge(int argc, char **argv);
@@ -298,6 +299,7 @@ static const cli_cmd_t s_cmds[] = {
     { "out",     "out off|raw|parsed   down-link content: off / raw report / parsed frame", cmd_out },
     { "auto",    "auto off|fix|tick [hz]  down-link trigger and rate limit",    cmd_auto },
     { "fix",     "fix                   send the newest value once, right now", cmd_fix },
+    { "send",    "send default          down-link back to defaults (parsed/fix/20Hz)", cmd_send },
     { "gstat",   "gstat                 console + down-link statistics",        cmd_gstat },
     { "info",    "info                  send the terminal info frame (0x90/0x02)", cmd_info },
     { "bridge",  "bridge on|off         transparent pipe GPS<->port, commands off", cmd_bridge },
@@ -680,6 +682,26 @@ static int gps_send(const char *line)
     }
     s_plat.gps_send_line(line);
     printf("[gps] -> %s\r\n", line);
+    return 0;
+}
+
+static int cmd_send(int argc, char **argv)
+{
+    static const char *out_name[]  = { "off", "raw", "parsed" };
+    static const char *auto_name[] = { "off", "fix", "tick" };
+
+    if ((argc != 2) || (0 != strcmp(argv[1], "default"))) {
+        printf("[cli] usage: send default    (out=parsed, auto=fix, rate=%lu Hz)\r\n",
+               (unsigned long)s_cfg_default.rate);
+        return -1;
+    }
+    cfg_write(cfg_find("out"),  s_cfg_default.out);
+    cfg_write(cfg_find("auto"), s_cfg_default.auto_mode);
+    cfg_write(cfg_find("rate"), s_cfg_default.rate);
+    printf("[cfg] down-link reset to defaults: out=%s auto=%s rate=%lu Hz\r\n",
+           out_name[s_cfg_default.out], auto_name[s_cfg_default.auto_mode],
+           (unsigned long)s_cfg_default.rate);
+    printf("[cfg] RAM only - use 'save' to keep it\r\n");
     return 0;
 }
 
