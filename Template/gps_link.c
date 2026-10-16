@@ -192,7 +192,7 @@ void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t v
         }
     }
 
-    s_pkt[target].len  = link_build(s_pkt[target].buf, LINK_CMD_DATA, LINK_FUNC_FIX,
+    s_pkt[target].len  = link_build(s_pkt[target].buf, LINK_UP_DATA, LINK_SUB_FIX,
                                     data, (uint16_t)sizeof(data));
     s_pkt[target].used = 1U;
     s_pkt_active = target;
@@ -315,7 +315,7 @@ void gps_link_stats_get(gps_link_stats_t *out)
   * 周期性上报走 ping-pong 槽，两者不冲突 */
 static uint8_t s_tx_one[LINK_FRAME_MAX];
 
-/* 终端信息帧：命令码 0x01 / 功能码 0x02，数据 = 帧序号(2) + 32 B 信息量 */
+/* 终端信息帧：字节2 = 0x90(数据上报) / 字节3 = 0x02(终端信息)，数据 = 帧序号(2) + 32 B 信息量 */
 int gps_link_send_info(const gps_link_info_t *info)
 {
     uint8_t  data[LINK_N_INFO];
@@ -340,7 +340,7 @@ int gps_link_send_info(const gps_link_info_t *info)
     data[i++] = info->rate;
     data[i++] = info->sat_min;
 
-    len = link_build(s_tx_one, LINK_CMD_DATA, LINK_FUNC_INFO, data, (uint16_t)sizeof(data));
+    len = link_build(s_tx_one, LINK_UP_DATA, LINK_SUB_INFO, data, (uint16_t)sizeof(data));
     if (0 != link_tx(s_tx_one, len)) {
         return -1;
     }

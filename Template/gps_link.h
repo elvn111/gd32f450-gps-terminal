@@ -35,9 +35,19 @@
 #define LINK_TAIL0          (0xB7U)
 #define LINK_TAIL1          (0x7BU)
 
-#define LINK_CMD_DATA       (0x01U)     /* 数据上报：终端 -> 对端 */
-#define LINK_FUNC_FIX       (0x01U)     /*   定位数据 */
-#define LINK_FUNC_INFO      (0x02U)     /*   终端信息 */
+/* 字节2 分区：bit7 = 0 是发给模块的命令，bit7 = 1 是模块往外发的
+  *   0x01..0x0F 命令码(命令集)      —— 下行
+  *   0x81..0x8F 应答(= 命令码 | 0x80) —— 上行
+  *   0x90..0x9F 数据上报             —— 上行(本文件实现)
+  *   0xA0..0xAF 事件上报             —— 上行
+  *   其它保留 */
+#define LINK_UP_DATA        (0x90U)     /* 上行·数据上报类 */
+#define LINK_SUB_FIX        (0x01U)     /*   子类：定位数据 */
+#define LINK_SUB_INFO       (0x02U)     /*   子类：终端信息 */
+
+/* 预留（命令通道实现时使用） */
+#define LINK_ACK_BASE       (0x80U)     /* 应答命令码 = 请求命令码 | LINK_ACK_BASE */
+#define LINK_UP_EVENT       (0xA0U)     /* 上行·事件上报类 */
 
 #define LINK_PAYLOAD_FIX    (24U)       /* 定位量字节数 */
 #define LINK_PAYLOAD_INFO   (32U)       /* 信息量字节数 */

@@ -465,7 +465,7 @@ static void plat_link_info_send(void)
     info.sat_min     = cfg->sat_min;
 
     if (0 == gps_link_send_info(&info)) {
-        printf("[link] info frame sent (cmd=0x01 func=0x02, %u bytes)\r\n",
+        printf("[link] info frame sent (0x90/0x02, %u bytes)\r\n",
                (unsigned)(LINK_N_INFO + 10U));
     } else {
         printf("[link] info frame NOT sent\r\n");

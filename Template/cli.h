@@ -52,7 +52,7 @@ typedef struct
     void     (*system_reset)(void);
     uint32_t (*uptime_ms)(void);
     void     (*gps_hw_reset)(void);                /* 拉 PB4 硬复位 GPS 模块(gps hwreset) */
-    void     (*link_info_send)(void);              /* 下发一帧终端信息(命令码 0x01 / 功能码 0x02，info 命令) */
+    void     (*link_info_send)(void);              /* 下发一帧终端信息(字节2 = 0x90 数据上报 / 字节3 = 0x02 终端信息) */
 } cli_platform_t;
 
 /* 接口 */
