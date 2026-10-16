@@ -239,9 +239,7 @@ static uint8_t  s_preset_from;          /* 本批从哪条开始(重发跳过前
 static uint8_t  s_preset_tries;         /* 已经发过几批 */
 static uint8_t  s_preset_sending;       /* 1 = 一批正在逐条发 */
 static uint8_t  s_preset_armed;         /* 0 = 还没排期 */
-static uint8_t  s_gps_alive;            /* 1 = 模块回过任何字节 */
 static uint8_t  s_gps_data;             /* 1 = 模块回过 '$' 语句(真在出数据) */
-static uint32_t s_gps_rx_bytes;         /* 模块一共回了多少字节(心跳里报) */
 
 void uart_send_string(uint32_t usart, const char *str)
 {
@@ -502,11 +500,8 @@ static void plat_link_info_send(void)
     info.rate        = (uint8_t)cfg->rate;
     info.sat_min     = cfg->sat_min;
 
-    if (0 == gps_link_send_info(&info)) {
-        printf("[link] info frame sent (0x90/0x02, %u bytes)\r\n",
-               (unsigned)(LINK_N_INFO + 10U));
-    } else {
-        printf("[link] info frame NOT sent\r\n");
+    if (0 != gps_link_send_info(&info)) {
+        printf("[link] info frame NOT sent\r\n");       /* 只在真发失败时出声 */
     }
 }
 
@@ -572,15 +567,10 @@ int main(void)
   *   EPRST = NRST 被外部拉低（调试器、串口工具的 DTR/RTS 都可能）
   *   SW / FWDGT / WWDGT = 软件复位或看门狗
   *   POR   = 正常上电 */
-/* 本次上电读到的复位标志，心跳里要重复用 */
-static uint32_t s_rst_rstsck = 0U;
-
 static void reset_cause_print(void)
 {
     uint32_t f = RCU_RSTSCK;
     const char *src = "unknown";
-
-    s_rst_rstsck = f;
 
     if (0U != (f & RCU_RSTSCK_PORRSTF)) {
         src = "POR (power-on)";
@@ -598,17 +588,7 @@ static void reset_cause_print(void)
         src = "LPRST (low-power reset)";
     }
 
-    /* 逐位打印：一次复位可能同时置多个标志(POR 与 EPRST 一起出现很常见)，
-      * 只报第一个命中的名字会把另一半信息丢掉。 */
     printf("\r\n[rst] RCU_RSTSCK=0x%08lX -> %s\r\n", (unsigned long)f, src);
-    printf("[rst] bits: POR=%u BOR=%u EPRST=%u SW=%u FWDT=%u WWDT=%u LRST=%u\r\n",
-           (unsigned)((0U != (f & RCU_RSTSCK_PORRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (f & RCU_RSTSCK_BORRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (f & RCU_RSTSCK_EPRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (f & RCU_RSTSCK_SWRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (f & RCU_RSTSCK_FWDGTRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (f & RCU_RSTSCK_WWDGTRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (f & RCU_RSTSCK_LPRSTF)) ? 1U : 0U));
     RCU_RSTSCK |= RCU_RSTSCK_RSTFC;         /* 清标志：下次复位才能看出新原因 */
 }
 
@@ -744,8 +724,9 @@ static void gps_preset_tick(void)
                                   ? GPS_PRESET_RETRY_MS : GPS_PRESET_SLOW_MS);
         cli_out_lock();
         if (1U == s_preset_tries) {
-            printf("[gps] preset sent one by one, waiting for module data\r\n");
-        } else {
+            printf("[gps] preset sent, waiting for module data\r\n");
+        } else if (s_preset_tries <= GPS_PRESET_MAX_TRIES) {
+            /* 只提示前几次：模块一直不在也不会每 5 s 刷屏 */
             printf("[gps] module quiet, log commands re-sent (%u)\r\n",
                    (unsigned)s_preset_tries);
         }
@@ -796,64 +777,6 @@ static void gps_keepalive_tick(void)
     memset(&ls, 0, sizeof(ls));
     gps_link_stats_get(&ls);                    /* 把自己这一帧也算进去，下一轮才判得准 */
     s_keepalive_frames = ls.tx_frames;
-}
-
-/* =====================================================================
- * 上电心跳：把"板子活着吗 / 帧发出去没有 / 模块回话没有"打成一行，
- * 上电后前 20 秒每秒一行，然后自动安静(verbose 打开时一直打)。
- * 排查"不发"时先看这一行：
- *   up 一直在涨        -> 没有复位，板子在跑
- *   up 反复回到 1000   -> 复位循环(看 rst 位判断是哪种复位)
- *   tx 一直不涨        -> 帧根本没组出来/没发出去
- *   rx5 = 0            -> 模块一个字节都没回来(预设没生效或模块没上电)
- *   rx0 不涨           -> 控制台输入进不来(RX_Task 卡住)
- * ===================================================================== */
-#define GPS_HB_MS       (1000U)
-#define GPS_HB_WINDOW   (20000U)
-
-static uint32_t s_hb_next_ms;
-
-static void gps_heartbeat_tick(void)
-{
-    cli_stats_t      st;
-    gps_link_stats_t ls;
-    uint32_t         now = plat_uptime_ms();
-
-    if ((now > GPS_HB_WINDOW) && (0U == cli_config_get()->verbose)) {
-        return;                                 /* 过了观察窗口就不再占控制台 */
-    }
-    if (0U == s_hb_next_ms) {
-        s_hb_next_ms = now + GPS_HB_MS;
-        return;
-    }
-    if ((int32_t)(now - s_hb_next_ms) < 0) {
-        return;
-    }
-    s_hb_next_ms = now + GPS_HB_MS;
-
-    memset(&st, 0, sizeof(st));
-    memset(&ls, 0, sizeof(ls));
-    cli_stats_get(&st);
-    gps_link_stats_get(&ls);
-
-    cli_out_lock();
-    printf("[hb] up=%lums tx=%lu rx5=%lu alive=%u data=%u rx0=%lu gps_ok=%lu gps_err=%lu "
-           "rst=0x%08lX POR=%u EPRST=%u SW=%u FWDT=%u WWDT=%u\r\n",
-           (unsigned long)now,
-           (unsigned long)ls.tx_frames,
-           (unsigned long)s_gps_rx_bytes,
-           (unsigned)s_gps_alive,
-           (unsigned)s_gps_data,
-           (unsigned long)st.rx_bytes,
-           (unsigned long)st.gps_ok,
-           (unsigned long)st.gps_err,
-           (unsigned long)s_rst_rstsck,
-           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_PORRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_EPRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_SWRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_FWDGTRSTF)) ? 1U : 0U),
-           (unsigned)((0U != (s_rst_rstsck & RCU_RSTSCK_WWDGTRSTF)) ? 1U : 0U));
-    cli_out_unlock();
 }
 
 void TX_Task(void *pvParameters)
@@ -931,7 +854,6 @@ void TX_Task(void *pvParameters)
         /* GPS 预设重发管理 + 下行：按 out/auto 决定是否发送，绝不排队(保最新) */
         gps_preset_tick();
         gps_keepalive_tick();       /* 每秒保证至少一帧出去，见上 */
-        gps_heartbeat_tick();       /* 上电 20 s 内每秒一行状态，见上 */
         (void)gps_link_poll();
     }
 }
@@ -957,10 +879,6 @@ void GPSRX_Task(void *pvParameters)
             keep = 0U;                      /* 一直收不到行结束符：当垃圾丢掉 */
             s_gps_carry_len = 0U;
             s_gps_carry_drop++;
-        }
-        if(0U != len){
-            s_gps_alive = 1U;       /* 模块有任何数据回来就不再重发预设 */
-            s_gps_rx_bytes += len;
         }
         memcpy(&s_gps_carry[keep], usart5_rx_buf, len);
         keep = (uint16_t)(keep + len);
