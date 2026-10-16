@@ -46,7 +46,7 @@ USART0：**115200-8-N-1，无流控**。
 | 看有什么命令 | `help` |
 | 看状态与计数 | `status`、`gstat`、`dma` |
 | 让终端往外发定位 | **出厂默认已在发**（`out parsed` + `auto fix` + `rate 20`）；要停就 `out off` |
-| 机机对接（干净数据流） | `set echo 0`、`set verbose 0` |
+| 机机对接（干净数据流） | 出厂默认即干净（`verbose=0`、`out=parsed`）；想彻底无声再 `set echo 0` |
 | 把命令直送定位模块 | 行首加 `@`，例如 `@log com1 gpnav ontime 1` |
 | 手工调模块 | `bridge on` …静默 ≥1 s 后发 `+++` 退出 |
 
