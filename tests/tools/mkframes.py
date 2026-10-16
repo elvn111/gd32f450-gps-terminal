@@ -21,7 +21,7 @@ def crc16_modbus(data):
 
 
 def build(cmd, func, data=b""):
-    body = HEAD + bytes([cmd, func]) + struct.pack("<H", len(data)) + data
+    body = HEAD + bytes([cmd, func]) + struct.pack(">H", len(data)) + data
     return body + struct.pack("<H", crc16_modbus(body)) + TAIL
 
 
@@ -33,7 +33,7 @@ def check(raw):
         return False, "帧头错"
     if raw[-2:] != TAIL:
         return False, "帧尾错"
-    n = struct.unpack_from("<H", raw, 4)[0]
+    n = struct.unpack_from(">H", raw, 4)[0]
     if len(raw) != 10 + n:
         return False, "N=%d 与实长 %d 不符" % (n, len(raw))
     c = struct.unpack_from("<H", raw, 6 + n)[0]
@@ -54,15 +54,15 @@ def wrap(raw, per=16):
 
 
 def u16(v):
-    return struct.pack("<H", v)
+    return struct.pack(">H", v)
 
 
 def u32(v):
-    return struct.pack("<I", v)
+    return struct.pack(">I", v)
 
 
 def i32(v):
-    return struct.pack("<i", v)
+    return struct.pack(">i", v)
 
 
 FIX24 = (i32(int(30.1234567 * 1e7)) + i32(int(120.7654321 * 1e7)) + i32(12345)
@@ -136,21 +136,3 @@ for name, cmd, func, data in CASES:
     out.append("== %s  (%d B)%s" % (name, len(raw), "" if ok else "   <<< 校验失败: " + info))
     out.append(wrap(raw))
 print("\n".join(out))
-
-# 顺手校验现有文档里抄来的帧
-print("\n---- 校验既有文档中的帧 ----")
-LEGACY = {
-    "设计稿 R1": "A6 6A 90 01 1A 00 B4 04 87 79 F4 11 B1 57 FB 47 39 30 00 00 11 22 D2 04 00 00 12 03 91 82 0B 00 39 5C B7 7B",
-    "设计稿 R2": "A6 6A 90 02 22 00 B5 04 91 82 0B 00 00 00 01 00 B4 04 00 00 00 00 00 00 25 00 00 00 6B 09 00 00 03 00 00 00 02 01 14 04 24 4E B7 7B",
-    "规范 I1": "A6 6A 90 02 22 00 65 00 91 82 0B 00 00 00 01 00 B4 04 00 00 00 00 00 00 25 00 00 00 6B 09 00 00 03 00 00 00 02 01 01 04 B1 8F B7 7B",
-    "规范 I2": "A6 6A 90 02 22 00 00 00 DC 05 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 04 8B 26 B7 7B",
-    "设计稿 Q2A": "A6 6A 81 02 06 00 00 08 02 00 00 00 1F 0C B7 7B",
-    "设计稿 Q7": "A6 6A 02 06 01 00 01 3D 48 B7 7B",
-    "设计稿 Q7A": "A6 6A 82 06 02 00 00 01 56 05 B7 7B",
-    "设计稿 E1": "A6 6A 81 7F 02 00 01 0F 4B A8 B7 7B",
-    "设计稿 E2": "A6 6A A0 01 06 00 14 05 A0 BB 0D 00 22 8B B7 7B",
-}
-for k, v in LEGACY.items():
-    raw = bytes(int(x, 16) for x in v.split())
-    ok, info = check(raw)
-    print("%-12s %-6s %s" % (k, "OK" if ok else "FAIL", info))

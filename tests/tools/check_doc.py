@@ -11,6 +11,15 @@ import struct
 import sys
 
 
+HEX_RE = re.compile(r"(?<![0-9A-Fa-f])[0-9A-Fa-f]{2}(?![0-9A-Fa-f])")
+
+
+def hex_tokens(text):
+    """抽十六进制字节。先去掉 recv:/send: 这类行标签，否则 'recv' 里的 'ec'
+    会被当成一个字节，整块样例就被误判成"不是帧"。"""
+    text = re.sub(r"(?i)\b(?:recv|send|tx|rx)\s*:", " ", text)
+    return [int(x, 16) for x in HEX_RE.findall(text)]
+
 def crc16_modbus(data):
     crc = 0xFFFF
     for b in data:
@@ -21,12 +30,12 @@ def crc16_modbus(data):
 
 
 def deframe(tokens):
-    """按 A6 6A + 长度 N 把字节流切成帧，返回 (frame, leftover) 列表"""
+    """按 A6 6A + 长度 N(高字节先发) 把字节流切成帧"""
     frames = []
     i = 0
     while i < len(tokens):
         if tokens[i] == 0xA6 and i + 5 < len(tokens) and tokens[i + 1] == 0x6A:
-            n = tokens[i + 4] | (tokens[i + 5] << 8)
+            n = (tokens[i + 4] << 8) | tokens[i + 5]
             end = i + 10 + n
             if end <= len(tokens):
                 frames.append(tokens[i:end])
@@ -41,15 +50,22 @@ def main():
     t = io.open(path, encoding="utf-8").read()
 
     blocks = re.findall(r"```(.*?)```", t, re.S)
-    nframe = nbad = 0
+    nframe = nbad = nlost = 0
     for bi, b in enumerate(blocks, 1):
-        toks = [int(x, 16) for x in re.findall(r"(?<![0-9A-Fa-f])[0-9A-Fa-f]{2}(?![0-9A-Fa-f])", b)]
+        toks = hex_tokens(b)
         if not toks or toks[0] != 0xA6:
             continue
-        for raw in deframe(toks):
+        got = deframe(toks)
+        if not got and (len(toks) >= 8) and ("+" not in b) and ("|" not in b):
+            # 像一串真帧却一帧都切不出来：长度字段字节序或定帧逻辑有问题
+            # (带 +/| 的块是 ASCII 示意图，不算)
+            print("LOST 块%-2d 以 A6 6A 开头但切不出帧（检查长度字段字节序）: %s"
+                  % (bi, " ".join("%02X" % x for x in toks[:12])))
+            nlost += 1
+        for raw in got:
             raw = bytes(raw)
             nframe += 1
-            n = struct.unpack_from("<H", raw, 4)[0]
+            n = struct.unpack_from(">H", raw, 4)[0]
             c = struct.unpack_from("<H", raw, 6 + n)[0]
             calc = crc16_modbus(raw[:6 + n])
             ok = (len(raw) == 10 + n) and (raw[-2:] == b"\xb7\x7b") and (c == calc)
@@ -68,8 +84,8 @@ def main():
     for m in re.finditer(r"校验码\s*0x([0-9A-F]{4})", t):
         print("   ", m.group(0))
 
-    print("\n共 %d 帧，失败 %d" % (nframe, nbad))
-    return 0 if (0 == nbad and good) else 1
+    print("\n共 %d 帧，失败 %d，切不出帧的块 %d" % (nframe, nbad, nlost))
+    return 0 if (0 == nbad and 0 == nlost and good) else 1
 
 
 if __name__ == "__main__":

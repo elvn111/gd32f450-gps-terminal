@@ -39,22 +39,22 @@ def crc16_modbus(data):
 
 
 def frame(cmd, func, data):
-    body = HEAD + bytes([cmd, func]) + struct.pack("<H", len(data)) + data
+    body = HEAD + bytes([cmd, func]) + struct.pack(">H", len(data)) + data
     return body + struct.pack("<H", crc16_modbus(body)) + TAIL
 
 
 def fix_frame(seq, lat_e7, lon_e7, h_mm, head_cd, base_mm, sat, flag, t_ms):
-    data = (struct.pack("<H", seq) + struct.pack("<iii", lat_e7, lon_e7, h_mm) +
-            struct.pack("<H", head_cd) + struct.pack("<I", base_mm) +
-            bytes([sat, flag]) + struct.pack("<I", t_ms))
+    data = (struct.pack(">H", seq) + struct.pack(">iii", lat_e7, lon_e7, h_mm) +
+            struct.pack(">H", head_cd) + struct.pack(">I", base_mm) +
+            bytes([sat, flag]) + struct.pack(">I", t_ms))
     assert len(data) == N_FIX, len(data)
     return frame(UP_DATA, SUB_FIX, data)
 
 
 def info_frame(seq, uptime_ms, version, tx_frames, tx_err, drop_latest,
                gps_ok, gps_err, out, auto_mode, rate, sat_min):
-    data = (struct.pack("<H", seq) +
-            struct.pack("<IIIIIII", uptime_ms, version, tx_frames, tx_err,
+    data = (struct.pack(">H", seq) +
+            struct.pack(">IIIIIII", uptime_ms, version, tx_frames, tx_err,
                         drop_latest, gps_ok, gps_err) +
             bytes([out, auto_mode, rate, sat_min]))
     assert len(data) == N_INFO, len(data)
@@ -84,22 +84,22 @@ def hexs(b, per_line=16):
 
 def decode(b):
     """Human readable dump of one frame."""
-    n = struct.unpack_from("<H", b, 4)[0]
+    n = struct.unpack_from(">H", b, 4)[0]
     cmd, func = b[2], b[3]
     out = [f"cmd=0x{cmd:02X} func=0x{func:02X} N={n} total={len(b)}"]
     data = b[6:6 + n]
     if (cmd, func) == (UP_DATA, SUB_FIX):
-        seq, = struct.unpack_from("<H", data, 0)
-        lat, lon, h = struct.unpack_from("<iii", data, 2)
-        head, = struct.unpack_from("<H", data, 14)
-        base, = struct.unpack_from("<I", data, 16)
-        t, = struct.unpack_from("<I", data, 22)
+        seq, = struct.unpack_from(">H", data, 0)
+        lat, lon, h = struct.unpack_from(">iii", data, 2)
+        head, = struct.unpack_from(">H", data, 14)
+        base, = struct.unpack_from(">I", data, 16)
+        t, = struct.unpack_from(">I", data, 22)
         out.append(f"seq={seq} lat={lat * 1e-7:.7f} lon={lon * 1e-7:.7f} h={h / 1000:.3f}m "
                    f"head={head / 100:.2f}deg base={base / 1000:.3f}m "
                    f"sat={data[20]} flag=0x{data[21]:02X} t_ms={t}")
     elif (cmd, func) == (UP_DATA, SUB_INFO):
-        seq, = struct.unpack_from("<H", data, 0)
-        up, ver, txf, txe, dr, ok, err = struct.unpack_from("<IIIIIII", data, 2)
+        seq, = struct.unpack_from(">H", data, 0)
+        up, ver, txf, txe, dr, ok, err = struct.unpack_from(">IIIIIII", data, 2)
         out.append(f"seq={seq} uptime={up}ms version={ver >> 16}.{(ver >> 8) & 0xFF}.{ver & 0xFF} "
                    f"tx={txf} tx_err={txe} drop={dr} gps_ok={ok} gps_err={err} "
                    f"out={data[30]} auto={data[31]} rate={data[32]} sat_min={data[33]}")
@@ -115,7 +115,7 @@ def validate(b):
         problems.append("帧头不是 A6 6A")
     if b[-2:] != TAIL:
         problems.append("帧尾不是 B7 7B")
-    n = struct.unpack_from("<H", b, 4)[0]
+    n = struct.unpack_from(">H", b, 4)[0]
     if n > MAX_N:
         problems.append(f"N={n} 超限")
     if len(b) != n + 10:

@@ -80,8 +80,8 @@ static uint16_t link_build(uint8_t *buf, uint8_t cmd, uint8_t func,
     buf[i++] = LINK_HEAD1;
     buf[i++] = cmd;
     buf[i++] = func;
-    buf[i++] = (uint8_t)(n & 0xFFU);            /* 长度小端 */
-    buf[i++] = (uint8_t)(n >> 8U);
+    buf[i++] = (uint8_t)(n >> 8U);              /* 长度：高字节先发 */
+    buf[i++] = (uint8_t)(n & 0xFFU);
     if ((NULL != data) && (0U != n)) {
         memcpy(&buf[i], data, n);
         i = (uint16_t)(i + n);
@@ -94,13 +94,21 @@ static uint16_t link_build(uint8_t *buf, uint8_t cmd, uint8_t func,
     return i;
 }
 
-/* 小端写入一个 32 位量，返回新的写入位置 */
+/* 大端写入 16/32 位量，返回新的写入位置。
+  * 本协议除校验码外所有多字节数值都是高字节先发(与 TXP 系列一致)。 */
+static uint16_t link_put_u16(uint8_t *buf, uint16_t i, uint16_t v)
+{
+    buf[i++] = (uint8_t)(v >> 8U);
+    buf[i++] = (uint8_t)(v & 0xFFU);
+    return i;
+}
+
 static uint16_t link_put_u32(uint8_t *buf, uint16_t i, uint32_t v)
 {
-    buf[i++] = (uint8_t)(v & 0xFFU);
-    buf[i++] = (uint8_t)((v >> 8U) & 0xFFU);
-    buf[i++] = (uint8_t)((v >> 16U) & 0xFFU);
     buf[i++] = (uint8_t)((v >> 24U) & 0xFFU);
+    buf[i++] = (uint8_t)((v >> 16U) & 0xFFU);
+    buf[i++] = (uint8_t)((v >> 8U) & 0xFFU);
+    buf[i++] = (uint8_t)(v & 0xFFU);
     return i;
 }
 
@@ -166,8 +174,7 @@ void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t v
         return;
     }
 
-    data[0] = (uint8_t)(s_seq & 0xFFU);         /* 上报帧数据段前 2 字节 = 帧序号 */
-    data[1] = (uint8_t)(s_seq >> 8U);
+    i = link_put_u16(data, i, s_seq);           /* 数据段前 2 字节 = 帧序号(大端) */
 
     {
         int32_t lat = (int32_t)((info->latitude >= 0.0) ? (info->latitude * 10000000.0 + 0.5)
@@ -195,17 +202,18 @@ void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t v
             base = 0U;
         }
 
-        memcpy(&data[i], &lat, 4U);  i += 4U;
-        memcpy(&data[i], &lon, 4U);  i += 4U;
-        memcpy(&data[i], &hgt, 4U);  i += 4U;
-        memcpy(&data[i], &head, 2U); i += 2U;
-        memcpy(&data[i], &base, 4U); i += 4U;
+        /* 负数按二进制补码，转成无符号后按大端写入，字节序与符号无关 */
+        i = link_put_u32(data, i, (uint32_t)lat);
+        i = link_put_u32(data, i, (uint32_t)lon);
+        i = link_put_u32(data, i, (uint32_t)hgt);
+        i = link_put_u16(data, i, head);
+        i = link_put_u32(data, i, base);
         data[i++] = (uint8_t)info->GPS_Satellite;
         data[i++] = (uint8_t)((0U != valid ? LINK_FLAG_VALID : 0U) |
                               (0U != source ? LINK_FLAG_SRC_GPYBM : 0U));
         {
             uint32_t t = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
-            memcpy(&data[i], &t, 4U); i += 4U;
+            i = link_put_u32(data, i, t);
         }
     }
 
@@ -343,8 +351,7 @@ int gps_link_send_info(const gps_link_info_t *info)
         return -1;
     }
 
-    data[0] = (uint8_t)(s_seq & 0xFFU);
-    data[1] = (uint8_t)(s_seq >> 8U);
+    i = link_put_u16(data, i, s_seq);
     i = link_put_u32(data, i, info->uptime_ms);
     i = link_put_u32(data, i, info->version);
     i = link_put_u32(data, i, info->tx_frames);
