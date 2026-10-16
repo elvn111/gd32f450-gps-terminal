@@ -3,9 +3,10 @@
 
 /* 固件版本的唯一来源：文本命令 ver/help 的字符串、下行信息帧的 version 字段、
   * 以及文档里的版本号都由这里推导，改版本只改下面三行。 */
-#define FW_VERSION_MAJOR    1U
-#define FW_VERSION_MINOR    0U
-#define FW_VERSION_PATCH    0U
+/* 不带 U 后缀：FW_VERSION_STRING 由 #x 字符串化，带上 U 会变成 "1U.0U.0U" */
+#define FW_VERSION_MAJOR    1
+#define FW_VERSION_MINOR    0
+#define FW_VERSION_PATCH    0
 
 /* "1.0.0" —— 文本界面用（宏拼接，无需手工同步） */
 #define FW__STR(x)          #x
