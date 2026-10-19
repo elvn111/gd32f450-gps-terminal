@@ -787,6 +787,10 @@ static void gps_preset_tick(void)
 {
     uint32_t now = plat_uptime_ms();
 
+    /* 桥模式下模块由主机直接驱动：预设命令不能插进管道 */
+    if (0U != cli_bridge_active()) {
+        return;
+    }
     if (0U != s_gps_data) {
         return;                                 /* 模块已经在出语句：收工 */
     }
@@ -858,6 +862,11 @@ static void gps_keepalive_tick(void)
     }
     s_keepalive_next_ms = now + GPS_KEEPALIVE_MS;
 
+    /* 桥模式是字节透明管道：终端自己的帧一帧都不能插进去 */
+    if (0U != cli_bridge_active()) {
+        return;
+    }
+
     memset(&ls, 0, sizeof(ls));
     gps_link_stats_get(&ls);
     if (ls.tx_frames != s_keepalive_frames) {   /* 这一秒里已经有帧发出去了 */
@@ -878,6 +887,14 @@ static void gps_event_tick(void)
 {
     const cli_config_t *cfg = cli_config_get();
     uint32_t now = plat_uptime_ms();
+
+    /* 桥模式下不发事件帧（管道里只该有模块的字节）；
+      * 但配置快照要跟上，否则出桥瞬间会把桥内 5 项管道参数当成"配置变更"连报 5 条。 */
+    if (0U != cli_bridge_active()) {
+        s_cfg_snap    = *cfg;
+        s_cfg_snap_ok = 1U;
+        return;
+    }
 
     /* 0xA0/0x02 模块无响应 */
     if(0U != s_gps_ever)
