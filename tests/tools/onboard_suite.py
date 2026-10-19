@@ -114,6 +114,8 @@ def main():
     ok(st == 0, "命令通道可用（0x01/0x01）",
        "version=0x%08X" % struct.unpack(">I", p[:4])[0] if len(p) >= 4 else "")
     ok(sq == 0x41, "回带序号正确")
+    # 先恢复默认，保证本次运行不受上一轮测试留下的状态影响（可重复跑）
+    lk.cmd(0x01, 0x06, bytes([0x40]) + struct.pack(">H", 0x5AA5))
     c = {i: lk.cfg(i) for i in range(1, 10)}
     ok((c[1], c[2], c[3], c[4], c[5]) == (1, 1, 0, 4, 115200), "控制台/模块配置默认",
        "mode=%s echo=%s verbose=%s sat_min=%s baud=%s" % (c[1], c[2], c[3], c[4], c[5]))
