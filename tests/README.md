@@ -16,7 +16,7 @@ run_tests.cmd         # Windows cmd（需要 gcc 与 python 在 PATH）
 | `test_cli_bridge.c` | 控制台/桥模式回归：把 `../Template/cli.c` 编成 PC 程序，验证进桥后字节整段原样转发、`+++` 需 1 s 静默、退出后 out/verbose/echo/auto/rate 精确恢复、配置项 ID 映射与越界拒绝，共 31 项检查 |
 | `tools/mkframes.py` | 生成协议文档需要的全部样例帧（上报、请求、应答、事件），每帧打印十六进制并逐帧自校验 |
 | `tools/check_doc.py` | 校验整份协议文档：按“帧头 + 长度 N”定帧，逐帧检查帧头/长度/CRC/帧尾；检查表号是否从 1 连续编号；列出正文里的校验码引用 |
-| `tools/onboard_check.py` | 实机分段自检（需板子 + 串口）：上电后配置是否出厂默认、桥模式进出、`+++` 退出、`0x02/0x05` / `0x01/0x07`、转发是否生效；模块无输出时把模块相关项标 SKIP 而不是 FAIL。用法：`python tools/onboard_check.py COM7` |
+| `tools/onboard_suite.py` | 实机全方位自检（需板子 + 串口；模块无输出时相关项标 SKIP）：上电后配置/桥模式/命令通道、19 条命令逐一（状态码 + 回带序号 + 载荷）、收帧健壮性（帧与文本同包 / 半帧拼接 / 半帧超时重同步 / 坏 CRC）、桥模式进出与配置恢复、复位后状态，共 47 项。用法：`python tools/onboard_suite.py COM7` |
 | `tools/md2docx.py` | 协议 markdown → `.docx`（自己拼 WordprocessingML，不经过 Word/WPS 的 HTML 导入）：封面单独一页、每个一级标题分页、目录域（打开后按 F9 出页码）、页脚“第 X 页 / 共 Y 页”、表格跨页重复表头、代码块等宽字体 |
 
 `check_frames.py` 也可以单独用作对接工具：
