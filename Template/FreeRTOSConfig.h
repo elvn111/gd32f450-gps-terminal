@@ -38,7 +38,8 @@ extern uint32_t SystemCoreClock;
 #define configTICK_RATE_HZ                            ( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES                          ( 8 )
 #define configMINIMAL_STACK_SIZE                      ( ( unsigned short ) 130 )
-#define configTOTAL_HEAP_SIZE                         ( ( size_t ) ( 16 * 1024 ) )
+/* 6 个任务 × 3 KB 栈 = 18 KB，再留余量：16 KB 会让最后创建的任务静默失败 */
+#define configTOTAL_HEAP_SIZE                         ( ( size_t ) ( 32 * 1024 ) )
 #define configMAX_TASK_NAME_LEN                       ( 16 )
 #define configUSE_16_BIT_TICKS                        0
 #define configIDLE_SHOULD_YIELD                       1

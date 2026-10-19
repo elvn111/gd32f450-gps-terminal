@@ -648,6 +648,16 @@ static void reset_cause_print(void)
     RCU_RSTSCK |= RCU_RSTSCK_RSTFC;         /* 清标志：下次复位才能看出新原因 */
 }
 
+/* 建任务并检查结果：FreeRTOS 堆不够时 xTaskCreate 会静默失败。
+  * 之前因为静态堆只有 16 KB 而 6 个任务要 18 KB，GPSRX/GPSTX 没建起来，
+  * 表现成"模块在发数据但固件不处理"。这里必须喊出来。 */
+static void task_new(TaskFunction_t fn, const char *name)
+{
+    if (pdPASS != xTaskCreate(fn, name, TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL)) {
+        printf("[fatal] task '%s' create failed: FreeRTOS heap exhausted\r\n", name);
+    }
+}
+
 void Init_Task(void *pvParameters)
 {
     /* 信号量必须在下面使能任何 USART 中断之前创建：
@@ -684,11 +694,11 @@ void Init_Task(void *pvParameters)
     g_console_lock = xSemaphoreCreateRecursiveMutex();
     cli_init(&g_cli_plat);
     bin_cmd_init(&g_bin_plat);      /* 二进制命令通道(0x01/0x02/0x03 命令集) */
-    xTaskCreate(LED_Task, "LED", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
-    xTaskCreate(RX_Task, "RECEIVE", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
-    xTaskCreate(TX_Task, "TRANSMIT", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
-    xTaskCreate(GPSRX_Task, "GPS_RECEIVE", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
-    xTaskCreate(GPSTX_Task, "GPS_TRANSMIT", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
+    task_new(LED_Task, "LED");
+    task_new(RX_Task, "RECEIVE");
+    task_new(TX_Task, "TRANSMIT");
+    task_new(GPSRX_Task, "GPS_RECEIVE");
+    task_new(GPSTX_Task, "GPS_TRANSMIT");
     //xTaskCreate(_Task, "", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
     while(1)
     {
