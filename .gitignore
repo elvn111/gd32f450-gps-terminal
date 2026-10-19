@@ -47,3 +47,4 @@ __pycache__/
 
 # 命令通道回归产物
 bin_cmd_test.exe
+cli_bridge_test.exe

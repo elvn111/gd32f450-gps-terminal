@@ -17,6 +17,8 @@ if command -v python3 >/dev/null 2>&1; then
 else
     gcc -std=c99 -Wall -Wextra -I../Template -o bin_cmd_test.exe test_bin_cmd.c ../Template/bin_cmd.c
 ./bin_cmd_test.exe
+gcc -std=c99 -Wall -Wextra -I../Template -o cli_bridge_test.exe test_cli_bridge.c ../Template/cli.c
+./cli_bridge_test.exe
 python tools/check_frames.py
 python tools/check_doc.py "../Template/时变TXP系列定位终端通信协议集V1.0.0_20261016.md"
 fi

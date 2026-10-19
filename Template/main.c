@@ -58,7 +58,9 @@ OF SUCH DAMAGE.
 #define STRING_LEN 50
 
 #define INIT_TASK_PRIO (tskIDLE_PRIORITY + 1)
-#define TASK_STACK_WORDS (configMINIMAL_STACK_SIZE * 3U)   /* printf 需要真正的栈空间：默认的 130 字栈不够，这里按 3 倍分配 */
+/* 任务栈：printf 需要真正的栈空间；RX_Task 还要在线里跑收帧状态机 + 命令分派 +
+  * 组应答帧(cmd_link 约 100 B 局部 + reply 66 B 缓冲)，所以留 6 倍余量(768 字 = 3 KB)。 */
+#define TASK_STACK_WORDS (configMINIMAL_STACK_SIZE * 6U)
 
 /*Command buff and GPS buff */
 uint8_t usart5_rx_buf[USART5_RX_BUF_SIZE]={0};

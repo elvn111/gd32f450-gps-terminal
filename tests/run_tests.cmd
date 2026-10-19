@@ -24,6 +24,14 @@ echo == running command-channel regression ==
 bin_cmd_test.exe
 if errorlevel 1 (echo [x] tests failed & exit /b 1)
 
+echo == building console/bridge regression ==
+%CC% -std=c99 -Wall -Wextra -I..\Template -o cli_bridge_test.exe test_cli_bridge.c ..\Template\cli.c
+if errorlevel 1 (echo [x] build failed & exit /b 1)
+
+echo == running console/bridge regression ==
+cli_bridge_test.exe
+if errorlevel 1 (echo [x] tests failed & exit /b 1)
+
 echo == checking protocol sample frames ==
 python tools\check_frames.py
 if errorlevel 1 (echo [x] frame check failed & exit /b 1)
