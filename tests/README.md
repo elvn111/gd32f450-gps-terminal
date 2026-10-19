@@ -12,6 +12,7 @@ run_tests.cmd         # Windows cmd（需要 gcc 与 python 在 PATH）
 |---|---|
 | `test_info_bsp.c` | 解析器回归：`$GPYBM` / `$GPNAV` 的样例、反例、边界，共 47 项断言。直接编译仓库里的 `../Template/info_bsp.c`，所以验的是**真源码** |
 | `tools/check_frames.py` | 按协议文档的字段定义重建样例帧（`0x90/0x01`、`0x90/0x02`），校验长度、CRC-16/MODBUS、帧尾与字段拆解；再解析协议文档，校验其中每个十六进制块的帧长与 CRC |
+| `test_bin_cmd.c` | 命令通道回归：把 `../Template/bin_cmd.c` 直接编成 PC 程序，喂协议文档的请求帧，核对应答帧的字节（状态/序号/载荷/CRC），并覆盖坏帧、未知命令、确认字、分片与半帧超时，共 60 项检查 |
 | `tools/mkframes.py` | 生成协议文档需要的全部样例帧（上报、请求、应答、事件），每帧打印十六进制并逐帧自校验 |
 | `tools/check_doc.py` | 校验整份协议文档：按“帧头 + 长度 N”定帧，逐帧检查帧头/长度/CRC/帧尾；检查表号是否从 1 连续编号；列出正文里的校验码引用 |
 | `tools/md2docx.py` | 协议 markdown → `.docx`（自己拼 WordprocessingML，不经过 Word/WPS 的 HTML 导入）：封面单独一页、每个一级标题分页、目录域（打开后按 F9 出页码）、页脚“第 X 页 / 共 Y 页”、表格跨页重复表头、代码块等宽字体 |

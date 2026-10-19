@@ -43,6 +43,7 @@ OF SUCH DAMAGE.
 #include "version.h"
 #include "nvm_config.h"
 #include "gps_link.h"
+#include "bin_cmd.h"
 
 #include <FreeRTOS.h>
 #include "semphr.h"
@@ -387,6 +388,59 @@ static uint32_t plat_uptime_ms(void)
     return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
 }
 
+/* =====================================================================
+ * 二进制命令通道(命令码 0x01/0x02/0x03)的平台钩子与事件状态
+ * ===================================================================== */
+
+/* 0x03/0x01 模块命令透传：一行文本发给定位模块，内部补 CRLF */
+static int bin_gps_line(const char *line)
+{
+    if(NULL == line){
+        return -1;
+    }
+    uart_send_string(USART5, line);
+    uart_send_string(USART5, "\r\n");
+    return 0;
+}
+
+/* 0x03/0x02 硬复位模块：拉复位脚 -> 等模块启动 -> 重下预设 */
+static void bin_gps_hw_reset(void)
+{
+    gps_reset_pulse(GPS_RESET_LOW_MS);
+    vTaskDelay(pdMS_TO_TICKS(GPS_RESET_BOOT_MS));
+    (void)gps_init();
+}
+
+/* 0x03/0x03 重发预设：状态机复位，由 gps_preset_tick() 逐条重发 */
+static void bin_gps_preset(void)
+{
+    (void)gps_init();
+}
+
+/* 0x01/0x07 系统重启 */
+static void bin_reset(void)
+{
+    NVIC_SystemReset();
+}
+
+static const bin_cmd_plat_t g_bin_plat =
+{
+    .gps_line      = bin_gps_line,
+    .gps_hw_reset  = bin_gps_hw_reset,
+    .gps_preset    = bin_gps_preset,
+    .reset         = bin_reset,
+    .uptime_ms     = plat_uptime_ms,
+};
+
+/* 事件用状态 */
+#define GPS_NORESP_MS       (10000U)    /* 模块 10 秒没数据判为无响应 */
+static uint8_t  s_prev_valid;           /* 上一帧定位有效性(1 -> 0 时上报定位丢失) */
+static uint8_t  s_gps_ever;             /* 1 = 收到过模块数据(无响应判据的使能) */
+static uint8_t  s_noresp_sent;          /* 1 = 已上报过模块无响应 */
+static uint32_t s_gps_last_ms;          /* 最近一次收到模块数据的时刻 */
+static cli_config_t s_cfg_snap;         /* 配置快照：比对出变更项 */
+static uint8_t  s_cfg_snap_ok;          /* 1 = 快照已建立 */
+
 /* CLI 挂钩：控制台锁、诊断打印、Flash 配置存取 */
 
 /* printf 不可重入，而多个任务都在打印，用一个互斥量串行化整个控制台。
@@ -627,6 +681,7 @@ void Init_Task(void *pvParameters)
 
     g_console_lock = xSemaphoreCreateRecursiveMutex();
     cli_init(&g_cli_plat);
+    bin_cmd_init(&g_bin_plat);      /* 二进制命令通道(0x01/0x02/0x03 命令集) */
     xTaskCreate(LED_Task, "LED", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
     xTaskCreate(RX_Task, "RECEIVE", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
     xTaskCreate(TX_Task, "TRANSMIT", TASK_STACK_WORDS, NULL, INIT_TASK_PRIO, NULL);
@@ -655,10 +710,16 @@ void LED_Task(void *pvParameters)
 GPS_Module_Info GPS_Info;
 void RX_Task(void *pvParameters)
 {
-    /* 一次取一段交给解释器：进来的可能是一行、半行或多行，解释器自己拼行。
-      * 取空为止，避免一次中断只处理一小段而留下积压。 */
+    /* 一次取一段，按字节分流：
+      *   二进制帧(0xA6 6A 开头) -> bin_cmd_feed()，帧字节不进文本解释器；
+      *   其余                     -> cli_input()，解释器自己拼行。
+      * 桥模式下二进制通道不生效，字节全部原样转给定位模块。
+      * 帧头 0xA6 不是可打印字符，文本行里不会出现，所以按首字节判没有歧义。 */
     uint8_t  chunk[CLI_LINE_MAX];
     uint16_t n;
+    uint16_t i;
+    uint16_t text_start;
+    uint8_t  in_frame;
 
     while(1)
     {
@@ -666,7 +727,38 @@ void RX_Task(void *pvParameters)
         {
             while(0U != (n = usart0_rx_ring_pop(chunk, (uint16_t)sizeof(chunk))))
             {
-                cli_input((const uint8_t *)chunk, n);
+                if(0U != cli_bridge_active())
+                {
+                    cli_input((const uint8_t *)chunk, n);   /* 桥模式：整段给模块 */
+                    continue;
+                }
+
+                in_frame   = 0U;
+                text_start = 0U;
+                for(i = 0U; i < n; i++)
+                {
+                    uint8_t fed = bin_cmd_feed(chunk[i]);
+
+                    if(0U != fed)
+                    {
+                        in_frame = 1U;
+                        if(i > text_start)
+                        {
+                            cli_input(&chunk[text_start], (uint16_t)(i - text_start));
+                        }
+                        text_start = (uint16_t)(i + 1U);
+                    }
+                    else if(0U != in_frame)
+                    {
+                        /* 帧中途被判非法(坏帧)：后面的字节重新按文本处理 */
+                        in_frame   = 0U;
+                        text_start = i;
+                    }
+                }
+                if(n > text_start)
+                {
+                    cli_input(&chunk[text_start], (uint16_t)(n - text_start));
+                }
             }
         }
     }
@@ -779,6 +871,66 @@ static void gps_keepalive_tick(void)
     s_keepalive_frames = ls.tx_frames;
 }
 
+/* 事件上报的周期检查：模块无响应(10 s 无数据) 与 配置变更(前后快照比对) */
+static void gps_event_tick(void)
+{
+    const cli_config_t *cfg = cli_config_get();
+    uint32_t now = plat_uptime_ms();
+
+    /* 0xA0/0x02 模块无响应 */
+    if(0U != s_gps_ever)
+    {
+        if((uint32_t)(now - s_gps_last_ms) > GPS_NORESP_MS)
+        {
+            if(0U == s_noresp_sent)
+            {
+                s_noresp_sent = 1U;
+                bin_cmd_event(BIN_EV_NORESP, NULL, 0U);
+            }
+        }
+        else
+        {
+            s_noresp_sent = 0U;     /* 又收到数据了，下次静默可以再报 */
+        }
+    }
+
+    /* 0xA0/0x03 配置变更：文本命令与二进制命令改的都在这里统一发现 */
+    if(0U == s_cfg_snap_ok)
+    {
+        s_cfg_snap    = *cfg;
+        s_cfg_snap_ok = 1U;
+        return;
+    }
+    {
+        uint8_t  changed = 0U;
+        uint8_t  id      = 0U;
+        uint32_t value   = 0U;
+        uint8_t  chg[5];
+
+        if(s_cfg_snap.mode != cfg->mode)              { changed = 1U; id = 1U; value = cfg->mode; }
+        else if(s_cfg_snap.echo != cfg->echo)         { changed = 1U; id = 2U; value = cfg->echo; }
+        else if(s_cfg_snap.verbose != cfg->verbose)   { changed = 1U; id = 3U; value = cfg->verbose; }
+        else if(s_cfg_snap.sat_min != cfg->sat_min)   { changed = 1U; id = 4U; value = cfg->sat_min; }
+        else if(s_cfg_snap.gps_baud != cfg->gps_baud) { changed = 1U; id = 5U; value = cfg->gps_baud; }
+        else if(s_cfg_snap.out != cfg->out)           { changed = 1U; id = 6U; value = cfg->out; }
+        else if(s_cfg_snap.auto_mode != cfg->auto_mode) { changed = 1U; id = 7U; value = cfg->auto_mode; }
+        else if(s_cfg_snap.rate != cfg->rate)         { changed = 1U; id = 8U; value = cfg->rate; }
+        else if(s_cfg_snap.prefix != cfg->prefix)     { changed = 1U; id = 9U; value = cfg->prefix; }
+
+        s_cfg_snap = *cfg;          /* 每轮都同步，一次只报一项 */
+
+        if(0U != changed)
+        {
+            chg[0] = id;
+            chg[1] = (uint8_t)((value >> 24U) & 0xFFU);    /* 新值，高字节先发 */
+            chg[2] = (uint8_t)((value >> 16U) & 0xFFU);
+            chg[3] = (uint8_t)((value >> 8U) & 0xFFU);
+            chg[4] = (uint8_t)(value & 0xFFU);
+            bin_cmd_event(BIN_EV_CFGCHG, chg, 5U);
+        }
+    }
+}
+
 void TX_Task(void *pvParameters)
 {
     while(1)
@@ -832,6 +984,13 @@ void TX_Task(void *pvParameters)
                                          (GPS_SRC_GPYBM == fix.source) ? 1U : 0U,
                                          valid);
 
+                    /* 事件 0xA0/0x01 定位丢失：由"有效"变成"无效"时上报一次 */
+                    if((0U != s_prev_valid) && (0U == valid))
+                    {
+                        bin_cmd_event(BIN_EV_LOST, NULL, 0U);
+                    }
+                    s_prev_valid = valid;
+
                     if((OUTPUT_STATE==WORKED) && cli_config_get()->verbose){
                         gps_report_print(&fix);
                     }
@@ -855,6 +1014,7 @@ void TX_Task(void *pvParameters)
         gps_preset_tick();
         gps_keepalive_tick();       /* 每秒保证至少一帧出去，见上 */
         (void)gps_link_poll();
+        gps_event_tick();           /* 模块无响应 / 配置变更事件 */
     }
 }
 
@@ -879,6 +1039,11 @@ void GPSRX_Task(void *pvParameters)
             keep = 0U;                      /* 一直收不到行结束符：当垃圾丢掉 */
             s_gps_carry_len = 0U;
             s_gps_carry_drop++;
+        }
+        if(0U != len)
+        {
+            s_gps_ever    = 1U;                 /* 收到过模块数据：无响应事件使能 */
+            s_gps_last_ms = plat_uptime_ms();   /* 记录时刻，10 s 静默判为无响应 */
         }
         memcpy(&s_gps_carry[keep], usart5_rx_buf, len);
         keep = (uint16_t)(keep + len);

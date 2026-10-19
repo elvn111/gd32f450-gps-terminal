@@ -124,4 +124,19 @@ void gps_link_stats_get(gps_link_stats_t *out);
 /* 立刻发一帧终端信息(与 out/auto/rate 无关)，0 = 已发出 */
 int  gps_link_send_info(const gps_link_info_t *info);
 
+/* ---- 供二进制命令通道使用 ---- */
+
+/* CRC-16/MODBUS：多项式 0x8005(反射 0xA001)、初值 0xFFFF、输入输出反射、结果不异或。
+  * 计算范围 = 帧头起、数据段结束止(6 + N 字节)。命令通道的收帧校验共用这一份。 */
+uint16_t gps_link_crc16(const uint8_t *data, uint16_t len);
+
+/* 发一帧任意命令码/功能码(应答帧用)。数据段高字节先发由调用者负责，
+  * 这里只按 A6 6A | cmd | func | N(大端) | data | CRC(低字节在前) | B7 7B 封帧。
+  * 返回 0 = 已发出。 */
+int  gps_link_send_frame(uint8_t cmd, uint8_t func, const uint8_t *data, uint16_t n);
+
+/* 取最近一次发布的定位量(24 字节，布局同定位数据帧去掉帧序号)。
+  * 返回 1 = 有值，0 = 还没有过定位数据。 */
+uint8_t gps_link_last_fix(uint8_t out24[24]);
+
 #endif /* GPS_LINK_H */

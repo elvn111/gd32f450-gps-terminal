@@ -39,6 +39,8 @@ static uint8_t      s_raw_active;
 static uint8_t      s_raw_busy = 0xFFU;
 
 static uint8_t      s_pending;          /* 有还没发出去的新值 */
+static uint8_t      s_last_fix[LINK_PAYLOAD_FIX];   /* 最近一次发布的 24 字节定位量 */
+static uint8_t      s_last_fix_ok;                   /* 1 = s_last_fix 有效 */
 static uint8_t      s_have_last;        /* 至少成功发送过一次 */
 static uint32_t     s_last_tx_tick;
 static uint16_t     s_seq;
@@ -48,8 +50,9 @@ static uint32_t s_tx_frames, s_tx_bytes, s_drop_latest, s_tx_err;
 static int32_t  s_last_err;
 
 /* CRC-16/MODBUS：多项式 0x8005(反射写法 0xA001)，初值 0xFFFF，
-  * 输入输出均反射、结果不异或。标准校验向量 "123456789" = 0x4B37 */
-static uint16_t link_crc16(const uint8_t *data, uint16_t len)
+  * 输入输出均反射、结果不异或。标准校验向量 "123456789" = 0x4B37。
+  * 对外：命令通道的收帧校验与这里共用同一份实现。 */
+uint16_t gps_link_crc16(const uint8_t *data, uint16_t len)
 {
     uint16_t crc = 0xFFFFU;
     uint16_t i;
@@ -86,7 +89,7 @@ static uint16_t link_build(uint8_t *buf, uint8_t cmd, uint8_t func,
         memcpy(&buf[i], data, n);
         i = (uint16_t)(i + n);
     }
-    crc = link_crc16(buf, i);                   /* 帧头…数据段结束 */
+    crc = gps_link_crc16(buf, i);                   /* 帧头…数据段结束 */
     buf[i++] = (uint8_t)(crc & 0xFFU);          /* CRC 低字节在前 */
     buf[i++] = (uint8_t)(crc >> 8U);
     buf[i++] = LINK_TAIL0;
@@ -223,6 +226,12 @@ void gps_link_publish_fix(const GPS_Module_Info *info, uint8_t source, uint8_t v
         s_tx_err++;
         s_last_err = -3;
         return;
+    }
+
+    /* 留一份最近定位量：0x02/0x04 读取最近定位直接用它 */
+    if ((uint16_t)sizeof(data) >= (uint16_t)(2U + LINK_PAYLOAD_FIX)) {
+        memcpy(s_last_fix, &data[2], LINK_PAYLOAD_FIX);
+        s_last_fix_ok = 1U;
     }
 
     s_pkt[target].len  = link_build(s_pkt[target].buf, LINK_UP_DATA, LINK_SUB_FIX,
@@ -410,6 +419,38 @@ void gps_link_init(void)
 
     /* USART0 侧：允许发送器产生 DMA 请求 */
     usart_dma_transmit_config(USART0, USART_TRANSMIT_DMA_ENABLE);
+}
+
+/* 发一帧任意命令码/功能码(应答帧)：调用者负责数据段的字节序(大端) */
+int gps_link_send_frame(uint8_t cmd, uint8_t func, const uint8_t *data, uint16_t n)
+{
+    uint16_t len;
+
+    if (n > (uint16_t)(LINK_FRAME_MAX - 10U)) {
+        return -1;
+    }
+    /* 与终端信息帧共用 s_tx_one：用控制台锁把"组帧 + 发送"包起来，
+      * 免得两个任务同时往同一个缓冲里写(锁是递归的，link_tx 里再加一次没问题) */
+    cli_out_lock();
+    len = link_build(s_tx_one, cmd, func, data, n);
+    if (0 != link_tx(s_tx_one, len)) {
+        cli_out_unlock();
+        return -1;
+    }
+    cli_out_unlock();
+    s_have_last    = 1U;
+    s_last_tx_tick = xTaskGetTickCount();
+    s_seq++;
+    return 0;
+}
+
+uint8_t gps_link_last_fix(uint8_t out24[24])
+{
+    if ((NULL == out24) || (0U == s_last_fix_ok)) {
+        return 0U;
+    }
+    memcpy(out24, s_last_fix, LINK_PAYLOAD_FIX);
+    return 1U;
 }
 
 void gps_link_info(void)

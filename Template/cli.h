@@ -89,4 +89,23 @@ typedef struct
 
 void cli_stats_get(cli_stats_t *out);
 
+/* ---- 二进制命令通道(命令码 0x01/0x02/0x03 的命令集)使用的接口 ----
+  * 配置项编号与协议文档 3.2 一致：1=mode 2=echo 3=verbose 4=sat_min 5=gps_baud
+  * 6=out 7=auto 8=rate 9=prefix */
+#define CLI_CFG_NUM         9U
+
+/* 读/写配置项(id 从 1 开始)：0 = ok，-1 = 编号无效，-2 = 取值越界 */
+int  cli_config_item_get(uint8_t id, uint32_t *value);
+int  cli_config_item_set(uint8_t id, uint32_t value);
+
+/* 保存/装载/恢复默认/清统计：0 = ok */
+int  cli_config_save(void);
+int  cli_config_load(void);
+void cli_config_default(void);
+void cli_stats_clear(void);
+
+/* 桥模式：1 = 正在桥接(此时二进制命令通道不生效，字节全给定位模块) */
+uint8_t cli_bridge_active(void);
+int  cli_bridge_switch(uint8_t on);      /* 0 = ok，-1 = 缺钩子 */
+
 #endif /* CLI_H */

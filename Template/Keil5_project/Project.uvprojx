@@ -433,6 +433,16 @@
               <FileType>1</FileType>
               <FilePath>..\gps_link.c</FilePath>
             </File>
+            <File>
+              <FileName>bin_cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bin_cmd.c</FilePath>
+            </File>
+            <File>
+              <FileName>bin_cmd.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\bin_cmd.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

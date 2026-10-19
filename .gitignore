@@ -44,3 +44,6 @@ JLinkLog.txt
 # python 缓存
 __pycache__/
 *.pyc
+
+# 命令通道回归产物
+bin_cmd_test.exe

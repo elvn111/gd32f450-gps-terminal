@@ -16,8 +16,20 @@ echo == running parser regression ==
 test_info_bsp.exe
 if errorlevel 1 (echo [x] tests failed & exit /b 1)
 
+echo == building command-channel regression ==
+%CC% -std=c99 -Wall -Wextra -I..\Template -o bin_cmd_test.exe test_bin_cmd.c ..\Template\bin_cmd.c
+if errorlevel 1 (echo [x] build failed & exit /b 1)
+
+echo == running command-channel regression ==
+bin_cmd_test.exe
+if errorlevel 1 (echo [x] tests failed & exit /b 1)
+
 echo == checking protocol sample frames ==
 python tools\check_frames.py
 if errorlevel 1 (echo [x] frame check failed & exit /b 1)
+
+echo == checking protocol document ==
+python tools\check_doc.py "..\Template\时变TXP系列定位终端通信协议集V1.0.0_20261016.md"
+if errorlevel 1 (echo [x] document check failed & exit /b 1)
 
 echo [ok] all PC tests passed

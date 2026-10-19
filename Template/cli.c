@@ -620,6 +620,52 @@ static void cli_bridge_exit(const char *why)
     cli_prompt();
 }
 
+uint8_t cli_bridge_active(void)
+{
+    return s_bridge;
+}
+
+/* 进入/退出桥模式：供二进制命令 0x02/0x05 使用。
+  * 与文本命令 bridge on|off 的语义一致（进桥时改 5 项配置并记下原值，出桥时恢复）。 */
+int cli_bridge_switch(uint8_t on)
+{
+    if (0U != on) {
+        const cli_config_t *c = cli_config_get();
+
+        if (0U != s_bridge) {
+            return 0;                       /* 已经在桥接 */
+        }
+        if ((NULL == s_plat.gps_send_raw) || (NULL == s_plat.uptime_ms)) {
+            return -1;                      /* 缺钩子 */
+        }
+        s_bridge_prev_out     = c->out;
+        s_bridge_prev_verbose = c->verbose;
+        s_bridge_prev_echo    = c->echo;
+        s_bridge_prev_auto    = c->auto_mode;
+        s_bridge_prev_rate    = c->rate;
+
+        cfg_write(cfg_find("out"),     1U);
+        cfg_write(cfg_find("verbose"), 0U);
+        cfg_write(cfg_find("echo"),    0U);
+        cfg_write(cfg_find("auto"),    1U);
+        cfg_write(cfg_find("rate"),    20U);
+
+        s_bridge_last_input = s_plat.uptime_ms();
+        s_len      = 0U;
+        s_overflow = 0U;
+        s_plus_run = 0U;
+        s_bridge   = 1U;
+
+        cli_out_lock();
+        printf("[cli] bridge ON (binary 0x02/0x05), binary channel OFF while bridging\r\n");
+        cli_out_unlock();
+        return 0;
+    }
+
+    cli_bridge_exit("binary cmd");
+    return 0;
+}
+
 /* ---- 上行桥：控制台字节直接送进 GPS 模块 ---- */
 static int cmd_bridge(int argc, char **argv)
 {
@@ -891,12 +937,7 @@ static int cmd_clr(int argc, char **argv)
     (void)argc;
     (void)argv;
 
-    s_rx_frames   = 0U;
-    s_rx_bytes    = 0U;
-    s_cmd_count   = 0U;
-    s_err_unknown = 0U;
-    s_gps_ok      = 0U;
-    s_gps_err     = 0U;
+    cli_stats_clear();
     printf("[cli] counters cleared\r\n");
     return 0;
 }
@@ -1283,6 +1324,73 @@ void cli_stat_gps(int ok)
     } else {
         s_gps_err++;
     }
+}
+
+/* ---- 二进制命令通道使用的接口 ---- */
+
+int cli_config_item_get(uint8_t id, uint32_t *value)
+{
+    if ((NULL == value) || (0U == id) || (id > (uint8_t)CFG_ITEM_NUM)) {
+        return -1;
+    }
+    *value = cfg_read(&s_items[id - 1U]);
+    return 0;
+}
+
+int cli_config_item_set(uint8_t id, uint32_t value)
+{
+    cfg_item_t *it;
+
+    if ((0U == id) || (id > (uint8_t)CFG_ITEM_NUM)) {
+        return -1;
+    }
+    it = &s_items[id - 1U];
+    if ((value < it->min) || (value > it->max)) {
+        return -2;
+    }
+    /* prefix 只接受可打印字符或 0，与 set 命令同一规则 */
+    if ((0 == strcmp(it->name, "prefix")) && (0U != value) &&
+        ((value < 0x21U) || (value > 0x7EU))) {
+        return -2;
+    }
+    cfg_write(it, value);
+    return 0;
+}
+
+int cli_config_save(void)
+{
+    if (NULL == s_plat.config_save) {
+        return -1;
+    }
+    return (0 == s_plat.config_save(&s_cfg)) ? 0 : -1;
+}
+
+int cli_config_load(void)
+{
+    if (NULL == s_plat.config_load) {
+        return -1;
+    }
+    if (0 != s_plat.config_load(&s_cfg)) {
+        return -1;
+    }
+    cfg_apply(NULL);
+    return 0;
+}
+
+void cli_config_default(void)
+{
+    s_cfg = s_cfg_default;
+    cfg_apply(NULL);
+}
+
+void cli_stats_clear(void)
+{
+    s_rx_frames   = 0U;
+    s_rx_bytes    = 0U;
+    s_cmd_count   = 0U;
+    s_err_unknown = 0U;
+    s_gps_ok      = 0U;
+    s_gps_err     = 0U;
 }
 
 void cli_stats_get(cli_stats_t *out)
